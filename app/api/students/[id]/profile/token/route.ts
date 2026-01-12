@@ -36,7 +36,7 @@ export async function POST(
     }
 
     // Generate unique token (32-character hex string)
-    let token: string;
+    let token: string = "";
     let isUnique = false;
     let attempts = 0;
     const maxAttempts = 10;
@@ -57,7 +57,7 @@ export async function POST(
       attempts++;
     }
 
-    if (!isUnique) {
+    if (!isUnique || !token) {
       return NextResponse.json({ error: "Failed to generate unique token" }, { status: 500 });
     }
 
