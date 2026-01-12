@@ -56,6 +56,10 @@ async function handleDemoAPI(url: string, init?: RequestInit): Promise<Response>
 
   // Auth endpoints
   if (pathname.startsWith("/api/auth/")) {
+    // Handle NextAuth session endpoint
+    if (pathname === "/api/auth/session" && method === "GET") {
+      return handleSession();
+    }
     if (pathname.includes("/login") && method === "POST") {
       return handleLogin(init);
     }
@@ -65,6 +69,8 @@ async function handleDemoAPI(url: string, init?: RequestInit): Promise<Response>
     if (pathname.includes("/register-company") && method === "POST") {
       return handleRegisterCompany(init);
     }
+    // For other NextAuth endpoints, return empty response to prevent errors
+    return jsonResponse({}, 200);
   }
 
   // Users
@@ -120,6 +126,24 @@ async function handleDemoAPI(url: string, init?: RequestInit): Promise<Response>
 }
 
 // Auth handlers
+async function handleSession(): Promise<Response> {
+  const session = getSession();
+  if (session) {
+    return jsonResponse({
+      user: {
+        id: session.id,
+        username: session.username,
+        role: session.role,
+        isActive: session.isActive,
+        universityId: session.universityId,
+        companyId: session.companyId,
+      },
+      expires: new Date(Date.now() + 86400000).toISOString(), // 24 hours
+    });
+  }
+  return jsonResponse({}, 200); // Return empty session when not logged in
+}
+
 async function handleLogin(init?: RequestInit): Promise<Response> {
   const body = await parseBody(init);
   const users = getEntity<User>(DEMO_STORAGE_KEYS.USERS);

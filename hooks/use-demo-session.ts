@@ -7,8 +7,15 @@ import { DEMO_STORAGE_KEYS } from "@/lib/demo/storage-keys";
 import { useEffect, useState, useCallback } from "react";
 
 export function useDemoSession() {
-  const { data: session, status } = useSession();
   const { isDemo } = useDemoMode();
+  // Only call useSession if not in demo mode to prevent API calls
+  const sessionHook = useSession({
+    required: false,
+    // Disable refetching in demo mode
+    refetchOnWindowFocus: !isDemo,
+    refetchWhenOffline: !isDemo,
+  });
+  const { data: session, status } = sessionHook;
   const [demoSession, setDemoSession] = useState<any>(null);
 
   // Function to update demo session from localStorage

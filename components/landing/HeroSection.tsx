@@ -4,8 +4,11 @@ import Link from "next/link";
 import { ArrowRight, GraduationCap, Building2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useDemoSession } from "@/hooks/use-demo-session";
 
 export function HeroSection() {
+  const { data: session } = useDemoSession();
+  const isAuthenticated = !!session;
   return (
     <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
       <div className="container mx-auto">
@@ -28,14 +31,16 @@ export function HeroSection() {
 
             <div className="flex flex-col sm:flex-row gap-4">
               <Button size="lg" asChild className="group">
-                <Link href="/register">
-                  เริ่มต้นใช้งาน
+                <Link href={isAuthenticated ? "/dashboard" : "/login"}>
+                  {isAuthenticated ? "เข้าสู่แอปพลิเคชัน" : "เริ่มต้นใช้งาน"}
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" asChild>
-                <Link href="/login">เข้าสู่ระบบ</Link>
-              </Button>
+              {!isAuthenticated && (
+                <Button size="lg" variant="outline" asChild>
+                  <Link href="/register">สมัครสมาชิก</Link>
+                </Button>
+              )}
             </div>
 
             {/* Stats */}
