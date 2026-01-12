@@ -64,6 +64,7 @@ const superAdminMenuItems: MenuItem[] = [
 
 const adminMenuItems: MenuItem[] = [
   { title: "แดชบอร์ด", url: "/dashboard", icon: LayoutDashboard },
+  { title: "ข้อมูลมหาวิทยาลัย", url: "/settings/university/profile", icon: School },
   { title: "จัดการผู้ใช้", url: "/users", icon: Users },
   { title: "จัดการนักศึกษา", url: "/students", icon: GraduationCap },
   { title: "จัดการบริษัท", url: "/companies", icon: Building2 },
@@ -75,13 +76,14 @@ const adminMenuItems: MenuItem[] = [
 
 const directorMenuItems: MenuItem[] = [
   { title: "แดชบอร์ด", url: "/dashboard", icon: LayoutDashboard },
+  { title: "ข้อมูลมหาวิทยาลัย", url: "/settings/university/profile", icon: School },
   { title: "นักศึกษาในที่ปรึกษา", url: "/students", icon: GraduationCap },
   { title: "บริษัท", url: "/companies", icon: Building2 },
   { title: "สถานะการฝึกงาน", url: "/internships", icon: ClipboardList },
   { title: "อนุมัติ Resume", url: "/director/resumes", icon: FileText },
   { title: "ประกาศข่าวสาร", url: "/announcements", icon: Megaphone },
   { title: "รายงาน", url: "/reports", icon: BarChart3 },
-  { title: "ตั้งค่ามหาวิทยาลัย", url: "/settings/university", icon: School },
+  { title: "ตั้งค่ามหาวิทยาลัย", url: "/settings/university", icon: Settings },
 ];
 
 const studentMenuItems: MenuItem[] = [
@@ -93,6 +95,7 @@ const studentMenuItems: MenuItem[] = [
 
 const companyMenuItems: MenuItem[] = [
   { title: "แดชบอร์ด", url: "/company", icon: LayoutDashboard },
+  { title: "ข้อมูลบริษัท", url: "/company/profile", icon: Building2 },
   { title: "ตำแหน่งงาน", url: "/company/job-positions", icon: Briefcase },
   { title: "ผู้สมัคร", url: "/company/applications", icon: Users },
   { title: "นักศึกษาฝึกงาน", url: "/company/students", icon: GraduationCap },
