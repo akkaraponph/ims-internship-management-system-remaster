@@ -15,9 +15,10 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon.ico") ||
     pathname.match(/\.(ico|png|jpg|jpeg|svg|webp)$/);
+  const isLandingPage = pathname === "/";
 
-  // Allow public assets and API routes
-  if (isPublicAsset || isApiRoute) {
+  // Allow public assets, API routes, and landing page
+  if (isPublicAsset || isApiRoute || isLandingPage) {
     return NextResponse.next();
   }
 
