@@ -67,4 +67,22 @@ export const defaultRoles: Record<UserRole, DefaultRole> = {
     ],
     isSystemRole: true,
   },
+  "company": {
+    name: "Company",
+    description: "Company user",
+    permissions: [
+      "profile.view",
+      "profile.update",
+      "job-positions.view",
+      "job-positions.create",
+      "job-positions.update",
+      "job-positions.delete",
+      "internships.view",
+      "internships.update",
+      "students.view",
+      "announcements.view",
+      "reports.view",
+    ],
+    isSystemRole: true,
+  },
 };

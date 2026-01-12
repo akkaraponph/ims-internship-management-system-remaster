@@ -42,6 +42,7 @@ export async function middleware(request: NextRequest) {
                       pathname.startsWith("/settings");
   const isDirectorRoute = pathname.startsWith("/reports");
   const isSuperAdminRoute = pathname.startsWith("/universities");
+  const isCompanyRoute = pathname.startsWith("/company");
   const isAnnouncementRoute = pathname.startsWith("/announcements");
 
   if (isSuperAdminRoute && token.role !== "super-admin") {
@@ -53,6 +54,10 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isDirectorRoute && token.role !== "director" && token.role !== "admin" && token.role !== "super-admin") {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
+  if (isCompanyRoute && token.role !== "company") {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 

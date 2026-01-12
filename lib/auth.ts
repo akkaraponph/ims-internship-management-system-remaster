@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import type { NextAuthConfig } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { db } from "./db";
-import { users, students, directors, roles } from "./db/schema";
+import { users, students, directors, companyUsers, roles } from "./db/schema";
 import { eq, or } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import type { UserRole } from "@/types";
@@ -72,6 +72,31 @@ export const authConfig: NextAuthConfig = {
         } else if (user[0].role === "admin") {
           // Admin uses universityId from users table
           universityId = user[0].universityId || null;
+        } else if (user[0].role === "company") {
+          // Get company from companyUsers table
+          const companyUser = await db
+            .select({ companyId: companyUsers.companyId })
+            .from(companyUsers)
+            .where(eq(companyUsers.userId, user[0].id))
+            .limit(1);
+          if (companyUser.length > 0) {
+            // For company users, we'll store companyId in universityId field for compatibility
+            // Or we can add a separate companyId field to the session
+            universityId = companyUser[0].companyId;
+          }
+        }
+
+        // Get companyId for company users
+        let companyId: string | null = null;
+        if (user[0].role === "company") {
+          const companyUser = await db
+            .select({ companyId: companyUsers.companyId })
+            .from(companyUsers)
+            .where(eq(companyUsers.userId, user[0].id))
+            .limit(1);
+          if (companyUser.length > 0) {
+            companyId = companyUser[0].companyId;
+          }
         }
 
         // Get custom role and permissions if exists
@@ -94,6 +119,7 @@ export const authConfig: NextAuthConfig = {
           role: user[0].role as UserRole,
           isActive: user[0].isActive,
           universityId: universityId,
+          companyId: companyId,
           customRoleId: user[0].customRoleId || null,
           customRolePermissions: customRolePermissions,
         };
@@ -111,6 +137,7 @@ export const authConfig: NextAuthConfig = {
         token.username = user.username;
         token.isActive = user.isActive;
         token.universityId = (user as any).universityId || null;
+        token.companyId = (user as any).companyId || null;
         token.customRoleId = (user as any).customRoleId || null;
         token.customRolePermissions = (user as any).customRolePermissions || null;
       }
@@ -123,6 +150,7 @@ export const authConfig: NextAuthConfig = {
         session.user.username = token.username as string;
         session.user.isActive = token.isActive as boolean;
         session.user.universityId = (token.universityId as string) || null;
+        session.user.companyId = (token.companyId as string) || null;
         session.user.customRoleId = (token.customRoleId as string) || null;
         session.user.customRolePermissions = (token.customRolePermissions as string[]) || null;
       }

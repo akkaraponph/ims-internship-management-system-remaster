@@ -17,6 +17,7 @@ import {
   Megaphone,
   Shield,
   Database,
+  Briefcase,
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
@@ -86,6 +87,14 @@ const studentMenuItems: MenuItem[] = [
   { title: "เอกสาร", url: "/documents", icon: FileText },
 ];
 
+const companyMenuItems: MenuItem[] = [
+  { title: "แดชบอร์ด", url: "/company", icon: LayoutDashboard },
+  { title: "ตำแหน่งงาน", url: "/company/job-positions", icon: Briefcase },
+  { title: "ผู้สมัคร", url: "/company/applications", icon: Users },
+  { title: "นักศึกษาฝึกงาน", url: "/company/students", icon: GraduationCap },
+  { title: "ประกาศข่าวสาร", url: "/announcements", icon: Megaphone },
+];
+
 export function AppSidebar() {
   const { data: session } = useSession();
   const pathname = usePathname();
@@ -102,6 +111,8 @@ export function AppSidebar() {
         return directorMenuItems;
       case "student":
         return studentMenuItems;
+      case "company":
+        return companyMenuItems;
       default:
         return [];
     }
@@ -117,6 +128,8 @@ export function AppSidebar() {
         return "อาจารย์ที่ปรึกษา";
       case "student":
         return "นักศึกษา";
+      case "company":
+        return "บริษัท";
       default:
         return "";
     }

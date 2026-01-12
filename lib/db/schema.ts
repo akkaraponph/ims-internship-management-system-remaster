@@ -14,7 +14,7 @@ import {
 import { relations } from "drizzle-orm";
 
 // Enums
-export const userRoleEnum = pgEnum("user_role", ["admin", "director", "student", "super-admin"]);
+export const userRoleEnum = pgEnum("user_role", ["admin", "director", "student", "super-admin", "company"]);
 export const announcementTypeEnum = pgEnum("announcement_type", ["info", "warning", "success", "error"]);
 export const announcementPriorityEnum = pgEnum("announcement_priority", ["low", "medium", "high"]);
 export const notificationTypeEnum = pgEnum("notification_type", ["system", "internship", "student", "company", "announcement"]);
@@ -145,11 +145,39 @@ export const companies = pgTable("companies", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Job Positions table
+export const jobPositions = pgTable("job_positions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  companyId: uuid("company_id").references(() => companies.id).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  requirements: text("requirements"),
+  location: varchar("location", { length: 255 }),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  maxApplicants: integer("max_applicants"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Company Users table
+export const companyUsers = pgTable("company_users", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => users.id).unique().notNull(),
+  companyId: uuid("company_id").references(() => companies.id).notNull(),
+  position: varchar("position", { length: 255 }),
+  isPrimary: boolean("is_primary").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Internships table
 export const internships = pgTable("internships", {
   id: uuid("id").primaryKey().defaultRandom(),
   studentId: uuid("student_id").references(() => students.id),
   companyId: uuid("company_id").references(() => companies.id),
+  jobPositionId: uuid("job_position_id").references(() => jobPositions.id),
   isSend: varchar("is_send", { length: 50 }),
   isConfirm: varchar("is_confirm", { length: 50 }),
   status: varchar("status", { length: 50 }).default("pending"), // pending, approved, rejected
@@ -176,7 +204,7 @@ export const universitiesRelations = relations(universities, ({ many }) => ({
   companies: many(companies),
 }));
 
-export const usersRelations = relations(users, ({ one }) => ({
+export const usersRelations = relations(users, ({ one, many }) => ({
   university: one(universities, {
     fields: [users.universityId],
     references: [universities.id],
@@ -188,6 +216,10 @@ export const usersRelations = relations(users, ({ one }) => ({
   director: one(directors, {
     fields: [users.id],
     references: [directors.userId],
+  }),
+  companyUser: one(companyUsers, {
+    fields: [users.id],
+    references: [companyUsers.userId],
   }),
 }));
 
@@ -233,6 +265,8 @@ export const companiesRelations = relations(companies, ({ one, many }) => ({
     references: [addresses.id],
   }),
   internships: many(internships),
+  jobPositions: many(jobPositions),
+  companyUsers: many(companyUsers),
 }));
 
 export const internshipsRelations = relations(internships, ({ one, many }) => ({
@@ -244,7 +278,30 @@ export const internshipsRelations = relations(internships, ({ one, many }) => ({
     fields: [internships.companyId],
     references: [companies.id],
   }),
+  jobPosition: one(jobPositions, {
+    fields: [internships.jobPositionId],
+    references: [jobPositions.id],
+  }),
   coInternships: many(coInternships),
+}));
+
+export const jobPositionsRelations = relations(jobPositions, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [jobPositions.companyId],
+    references: [companies.id],
+  }),
+  internships: many(internships),
+}));
+
+export const companyUsersRelations = relations(companyUsers, ({ one }) => ({
+  user: one(users, {
+    fields: [companyUsers.userId],
+    references: [users.id],
+  }),
+  company: one(companies, {
+    fields: [companyUsers.companyId],
+    references: [companies.id],
+  }),
 }));
 
 export const coInternshipsRelations = relations(coInternships, ({ one }) => ({

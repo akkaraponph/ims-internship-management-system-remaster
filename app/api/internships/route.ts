@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { internships, students } from "@/lib/db/schema";
+import { internships, students, companyUsers, users } from "@/lib/db/schema";
 import { createInternshipSchema } from "@/lib/validations";
 import { eq, inArray } from "drizzle-orm";
+import { createNotification } from "@/lib/notifications/notification-service";
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,6 +31,16 @@ export async function GET(request: NextRequest) {
         .where(eq(internships.studentId, studentRecords[0].id));
 
       return NextResponse.json(studentInternships);
+    }
+
+    // Companies can see internships for their company
+    if (session.user.role === "company" && session.user.companyId) {
+      const companyInternships = await db
+        .select()
+        .from(internships)
+        .where(eq(internships.companyId, session.user.companyId));
+
+      return NextResponse.json(companyInternships);
     }
 
     // Super-admin can see all internships
@@ -79,6 +90,41 @@ export async function POST(request: NextRequest) {
     const validatedData = createInternshipSchema.parse(body);
 
     const newInternship = await db.insert(internships).values(validatedData).returning();
+
+    // Send notification to company users when student applies
+    if (validatedData.companyId) {
+      try {
+        const companyUserRecords = await db
+          .select({ userId: companyUsers.userId })
+          .from(companyUsers)
+          .where(eq(companyUsers.companyId, validatedData.companyId));
+
+        const companyUserIds = companyUserRecords.map((cu) => cu.userId);
+
+        // Get user records to send notifications
+        if (companyUserIds.length > 0) {
+          const companyUserDetails = await db
+            .select()
+            .from(users)
+            .where(inArray(users.id, companyUserIds));
+
+          // Send notifications to all company users
+          for (const companyUser of companyUserDetails) {
+            await createNotification({
+              userId: companyUser.id,
+              type: "internship",
+              title: "มีผู้สมัครใหม่",
+              message: "มีนักศึกษาสมัครฝึกงานตำแหน่งงานของคุณ",
+              link: `/company/applications`,
+              sendEmail: false,
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error sending notification to company:", error);
+        // Don't fail the request if notification fails
+      }
+    }
 
     return NextResponse.json(newInternship[0], { status: 201 });
   } catch (error: any) {
