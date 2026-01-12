@@ -20,8 +20,11 @@ import {
   Briefcase,
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
+import { useDemoMode } from "@/lib/demo/demo-context";
+import { getSession, clearSession } from "@/lib/demo/demo-service";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -96,13 +99,24 @@ const companyMenuItems: MenuItem[] = [
 ];
 
 export function AppSidebar() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const { isDemo } = useDemoMode();
   const pathname = usePathname();
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
+  const [demoSession, setDemoSession] = useState<any>(null);
+
+  useEffect(() => {
+    if (isDemo) {
+      const sessionData = getSession();
+      setDemoSession(sessionData);
+    }
+  }, [isDemo]);
+
+  const currentSession = isDemo ? { user: demoSession } : session;
 
   const getMenuItems = (): MenuItem[] => {
-    switch (session?.user?.role) {
+    switch (currentSession?.user?.role) {
       case "super-admin":
         return superAdminMenuItems;
       case "admin":
@@ -119,7 +133,7 @@ export function AppSidebar() {
   };
 
   const getRoleLabel = (): string => {
-    switch (session?.user?.role) {
+    switch (currentSession?.user?.role) {
       case "super-admin":
         return "ผู้ดูแลระบบหลัก";
       case "admin":
@@ -136,7 +150,16 @@ export function AppSidebar() {
   };
 
   const menuItems = getMenuItems();
-  const user = session?.user;
+  const user = currentSession?.user;
+
+  const handleSignOut = () => {
+    if (isDemo) {
+      clearSession();
+      window.location.href = "/login?demo=true";
+    } else {
+      signOut({ callbackUrl: "/login" });
+    }
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -206,7 +229,7 @@ export function AppSidebar() {
           <Button
             variant="ghost"
             className="w-full justify-start gap-3 text-destructive hover:bg-destructive/10 hover:text-destructive"
-            onClick={() => signOut({ callbackUrl: "/login" })}
+            onClick={handleSignOut}
           >
             <LogOut className="h-4 w-4" />
             {!collapsed && <span>ออกจากระบบ</span>}

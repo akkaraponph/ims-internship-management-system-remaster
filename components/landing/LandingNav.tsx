@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Menu, X, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { DemoModeToggle } from "@/components/demo/DemoModeToggle";
 import { useSession } from "next-auth/react";
 
 export function LandingNav() {
@@ -44,6 +45,7 @@ export function LandingNav() {
 
           {/* Right side buttons */}
           <div className="hidden md:flex items-center space-x-4">
+            <DemoModeToggle />
             <ThemeToggle />
             {session ? (
               <Button asChild>
@@ -63,6 +65,7 @@ export function LandingNav() {
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center space-x-2">
+            <DemoModeToggle />
             <ThemeToggle />
             <Button
               variant="ghost"
@@ -92,6 +95,9 @@ export function LandingNav() {
               </Link>
             ))}
             <div className="pt-4 space-y-2 border-t border-border">
+              <div className="px-2 pb-2">
+                <DemoModeToggle />
+              </div>
               {session ? (
                 <Button asChild className="w-full">
                   <Link href="/dashboard">แดชบอร์ด</Link>

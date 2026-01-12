@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { useDemoMode } from "@/lib/demo/demo-context";
 import { getSession } from "@/lib/demo/demo-service";
 import { AdminDashboard } from "@/components/dashboard/AdminDashboard";
@@ -10,28 +9,28 @@ import { DirectorDashboard } from "@/components/dashboard/DirectorDashboard";
 import { StudentDashboard } from "@/components/dashboard/StudentDashboard";
 import { CompanyDashboard } from "@/components/dashboard/CompanyDashboard";
 
-export default function DashboardPage() {
+export default function DashboardPageDemo() {
   const router = useRouter();
-  const { data: session, status } = useSession();
   const { isDemo } = useDemoMode();
-  const [demoSession, setDemoSession] = useState<any>(null);
+  const [session, setSession] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (isDemo) {
-      const sessionData = getSession();
-      if (sessionData) {
-        setDemoSession(sessionData);
+      const demoSession = getSession();
+      if (demoSession) {
+        setSession(demoSession);
       } else {
-        router.push("/login?demo=true");
+        router.push("/login");
       }
       setIsLoading(false);
     } else {
-      setIsLoading(false);
+      // In real mode, this component shouldn't be used
+      router.push("/dashboard");
     }
   }, [isDemo, router]);
 
-  if (isLoading || (isDemo && !demoSession) || (!isDemo && status === "loading")) {
+  if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -39,17 +38,11 @@ export default function DashboardPage() {
     );
   }
 
-  if (!isDemo && status === "unauthenticated") {
-    router.push("/login");
+  if (!session) {
     return null;
   }
 
-  const currentSession = isDemo ? demoSession : session?.user;
-  if (!currentSession) {
-    return null;
-  }
-
-  const { role } = currentSession;
+  const { role } = session;
 
   if (role === "admin" || role === "super-admin") {
     return <AdminDashboard />;

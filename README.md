@@ -2,6 +2,12 @@
 
 ระบบจัดการการฝึกงานที่พัฒนาด้วย Next.js 16, Tailwind CSS, shadcn/ui, Formik + Zod, Drizzle ORM, และ PostgreSQL (Neon)
 
+## เกี่ยวกับโปรเจกต์
+
+โปรเจกต์นี้เป็นเวอร์ชันรีมาสเตอร์จาก:
+- [internship-management-system](https://github.com/akkaraponph/internship-management-system)
+- [internship-management-system-nextjs-node-ts](https://github.com/akkaraponph/internship-management-system-nextjs-node-ts)
+
 ## เทคโนโลยีที่ใช้
 
 - **Framework**: Next.js 16 (App Router)

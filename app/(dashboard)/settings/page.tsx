@@ -1,13 +1,16 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings as SettingsIcon, Mail, Shield, Database, Bell } from "lucide-react";
+import { Settings as SettingsIcon, Mail, Shield, Database, Bell, TestTube } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useSession } from "next-auth/react";
+import { DemoModeToggle, DemoModeResetButton } from "@/components/demo/DemoModeToggle";
+import { useDemoMode } from "@/lib/demo/demo-context";
 
 export default function SettingsPage() {
   const { data: session } = useSession();
+  const { isDemo } = useDemoMode();
   const isAdmin = session?.user?.role === "admin" || session?.user?.role === "super-admin";
   const isSuperAdmin = session?.user?.role === "super-admin";
 
@@ -95,6 +98,29 @@ export default function SettingsPage() {
 
         <Card>
           <CardHeader>
+            <div className="flex items-center gap-2">
+              <TestTube className="h-5 w-5" />
+              <CardTitle>Demo Mode</CardTitle>
+            </div>
+            <CardDescription>เปิด/ปิดโหมด Demo สำหรับทดสอบระบบ</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">
+                โหมด Demo จะใช้ข้อมูลจาก localStorage แทนการเชื่อมต่อกับฐานข้อมูลจริง
+              </p>
+              <DemoModeToggle />
+            </div>
+            {isDemo && (
+              <div className="pt-4 border-t">
+                <DemoModeResetButton />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle>ข้อมูลระบบ</CardTitle>
             <CardDescription>ข้อมูลและสถิติของระบบ</CardDescription>
           </CardHeader>
@@ -106,7 +132,9 @@ export default function SettingsPage() {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">สถานะ:</span>
-                <span className="font-medium text-green-600">ทำงานปกติ</span>
+                <span className={`font-medium ${isDemo ? "text-yellow-600" : "text-green-600"}`}>
+                  {isDemo ? "Demo Mode" : "ทำงานปกติ"}
+                </span>
               </div>
             </div>
           </CardContent>
