@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { students } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { writeFile, mkdir } from "fs/promises";
+import { writeFile, mkdir, unlink } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
 
@@ -62,6 +62,18 @@ export async function POST(request: NextRequest) {
       await mkdir(uploadsDir, { recursive: true });
     }
 
+    // Delete old resume file if exists
+    if (student.resume) {
+      const oldResumePath = join(process.cwd(), "public", student.resume);
+      if (existsSync(oldResumePath)) {
+        try {
+          await unlink(oldResumePath);
+        } catch (error) {
+          console.error("Error deleting old resume:", error);
+        }
+      }
+    }
+
     // Generate unique filename
     const fileExtension = file.name.split(".").pop();
     const fileName = `${student.id}-${Date.now()}.${fileExtension}`;
@@ -72,17 +84,21 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(bytes);
     await writeFile(filePath, buffer);
 
-    // Update student record with resume status
+    // Update student record with resume file path and reset approval status
+    const fileUrl = `/uploads/resumes/${fileName}`;
     await db
       .update(students)
       .set({
+        resume: fileUrl,
         resumeStatus: true,
+        resumeApproved: false,
+        resumeApprovedBy: null,
+        resumeApprovedAt: null,
         updatedAt: new Date(),
       })
       .where(eq(students.id, student.id));
 
     // Return file URL
-    const fileUrl = `/uploads/resumes/${fileName}`;
 
     return NextResponse.json({
       message: "Resume uploaded successfully",

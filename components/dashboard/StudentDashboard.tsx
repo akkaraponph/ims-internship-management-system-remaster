@@ -122,6 +122,48 @@ export function StudentDashboard() {
           </CardContent>
         </Card>
 
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              สถานะ Resume
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {student?.resumeStatus ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">สถานะการอนุมัติ</span>
+                  <Badge variant={student.resumeApproved ? "default" : "secondary"}>
+                    {student.resumeApproved ? "อนุมัติแล้ว" : "รอการอนุมัติ"}
+                  </Badge>
+                </div>
+                {student.resumeApproved && student.resumeApprovedAt && (
+                  <div className="text-sm text-muted-foreground">
+                    อนุมัติเมื่อ: {new Date(student.resumeApprovedAt).toLocaleDateString("th-TH", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </div>
+                )}
+                {!student.resumeApproved && (
+                  <div className="text-sm text-yellow-600 dark:text-yellow-400">
+                    ⚠️ กรุณารอการอนุมัติจากอาจารย์ที่ปรึกษา
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground">
+                ยังไม่อัพโหลด Resume
+              </div>
+            )}
+            <Button variant="outline" className="w-full" asChild>
+              <a href="/documents">จัดการ Resume</a>
+            </Button>
+          </CardContent>
+        </Card>
+
         <Card className="lg:col-span-2">
           <CardHeader>
             <div className="flex items-center justify-between">

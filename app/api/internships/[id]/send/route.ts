@@ -40,12 +40,36 @@ export async function POST(
       if (studentRecords.length === 0 || studentRecords[0].id !== internship.studentId) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
+
+      // Check if student's resume is approved before sending to company
+      if (!studentRecords[0].resumeApproved) {
+        return NextResponse.json(
+          { error: "Resume must be approved by director before sending internship application to company" },
+          { status: 400 }
+        );
+      }
     } else if (
       session.user.role !== "admin" &&
       session.user.role !== "director" &&
       session.user.role !== "super-admin"
     ) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    } else {
+      // For admins/directors/super-admins, also check resume approval if it's a student's internship
+      if (internship.studentId) {
+        const studentRecords = await db
+          .select({ resumeApproved: students.resumeApproved })
+          .from(students)
+          .where(eq(students.id, internship.studentId))
+          .limit(1);
+
+        if (studentRecords.length > 0 && !studentRecords[0].resumeApproved) {
+          return NextResponse.json(
+            { error: "Student's resume must be approved before sending internship application to company" },
+            { status: 400 }
+          );
+        }
+      }
     }
 
     // Update internship to mark as sent

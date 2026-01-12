@@ -178,6 +178,22 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = createInternshipSchema.parse(body);
 
+    // Check resume approval if trying to send immediately (isSend: "1")
+    if (validatedData.isSend === "1" && validatedData.studentId) {
+      const studentRecords = await db
+        .select({ resumeApproved: students.resumeApproved })
+        .from(students)
+        .where(eq(students.id, validatedData.studentId))
+        .limit(1);
+
+      if (studentRecords.length > 0 && !studentRecords[0].resumeApproved) {
+        return NextResponse.json(
+          { error: "Resume must be approved by director before sending internship application to company" },
+          { status: 400 }
+        );
+      }
+    }
+
     const newInternship = await db.insert(internships).values(validatedData).returning();
 
     // Send notification to company users when student applies

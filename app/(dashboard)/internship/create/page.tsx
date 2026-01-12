@@ -44,6 +44,7 @@ interface Student {
   email: string;
   program: string | null;
   phone: string | null;
+  resumeApproved: boolean;
 }
 
 interface CoStudent {
@@ -276,7 +277,8 @@ export default function CreateInternshipPage() {
       });
 
       if (!internshipResponse.ok) {
-        throw new Error("Failed to create internship");
+        const errorData = await internshipResponse.json();
+        throw new Error(errorData.error || "Failed to create internship");
       }
 
       const internship = await internshipResponse.json();
@@ -669,6 +671,20 @@ export default function CreateInternshipPage() {
           </CardContent>
         </Card>
 
+        {/* Resume Approval Warning */}
+        {student && !student.resumeApproved && (
+          <Card className="mb-6 border-yellow-500 bg-yellow-50 dark:bg-yellow-950">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-2 text-yellow-800 dark:text-yellow-200">
+                <span className="font-medium">
+                  ⚠️ หมายเหตุ: Resume ของคุณยังไม่ได้รับการอนุมัติจากอาจารย์ที่ปรึกษา
+                  กรุณาอัพโหลด Resume และรอการอนุมัติก่อนส่งใบสมัครฝึกงาน
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Action Buttons */}
         <div className="flex justify-end gap-4">
           <Button
@@ -695,7 +711,8 @@ export default function CreateInternshipPage() {
           <Button
             type="button"
             onClick={() => handleSave(true)}
-            disabled={isSaving}
+            disabled={isSaving || (student && !student.resumeApproved)}
+            title={student && !student.resumeApproved ? "กรุณารอการอนุมัติ Resume ก่อนส่ง" : undefined}
           >
             {isSaving ? (
               <>

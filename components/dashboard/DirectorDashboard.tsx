@@ -1,5 +1,7 @@
 "use client";
 
+"use client";
+
 import {
   GraduationCap,
   Building2,
@@ -8,14 +10,38 @@ import {
   CheckCircle,
   AlertCircle,
   ArrowRight,
+  FileText,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AnnouncementBanner } from "@/components/announcements/AnnouncementBanner";
 import Link from "next/link";
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 
 export function DirectorDashboard() {
+  const { data: session } = useSession();
+  const [pendingResumesCount, setPendingResumesCount] = useState(0);
+
+  useEffect(() => {
+    if (session?.user?.role === "director" || session?.user?.role === "admin" || session?.user?.role === "super-admin") {
+      fetchPendingResumesCount();
+    }
+  }, [session]);
+
+  const fetchPendingResumesCount = async () => {
+    try {
+      const response = await fetch("/api/students/resumes/pending");
+      if (response.ok) {
+        const data = await response.json();
+        setPendingResumesCount(Array.isArray(data) ? data.length : 0);
+      }
+    } catch (error) {
+      console.error("Error fetching pending resumes count:", error);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <AnnouncementBanner />
@@ -25,7 +51,7 @@ export function DirectorDashboard() {
         <p className="text-muted-foreground">ภาพรวมนักศึกษาในความดูแล</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">นักศึกษาในความดูแล</CardTitle>
@@ -59,6 +85,21 @@ export function DirectorDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">0</div>
             <Link href="/director/internships/confirmed">
+              <Button variant="link" className="p-0 h-auto mt-2">
+                ดูรายการ <ArrowRight className="ml-1 h-3 w-3" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Resume รอการอนุมัติ</CardTitle>
+            <FileText className="h-4 w-4 text-yellow-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{pendingResumesCount}</div>
+            <Link href="/director/resumes">
               <Button variant="link" className="p-0 h-auto mt-2">
                 ดูรายการ <ArrowRight className="ml-1 h-3 w-3" />
               </Button>

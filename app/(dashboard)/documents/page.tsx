@@ -12,6 +12,9 @@ import { Loader2, Upload, FileText, Download, Trash2, Image as ImageIcon } from 
 interface Student {
   id: string;
   resumeStatus: boolean;
+  resume: string | null;
+  resumeApproved: boolean;
+  resumeApprovedAt: string | null;
   image: string | null;
 }
 
@@ -176,11 +179,58 @@ export default function DocumentsPage() {
             <CardDescription>อัพโหลด Resume ของคุณ (PDF หรือ DOCX)</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Badge variant={student.resumeStatus ? "default" : "secondary"}>
                 {student.resumeStatus ? "อัพโหลดแล้ว" : "ยังไม่อัพโหลด"}
               </Badge>
+              {student.resumeStatus && (
+                <Badge
+                  variant={
+                    student.resumeApproved
+                      ? "default"
+                      : "secondary"
+                  }
+                >
+                  {student.resumeApproved
+                    ? "อนุมัติแล้ว"
+                    : "รอการอนุมัติ"}
+                </Badge>
+              )}
             </div>
+            {student.resumeApproved && student.resumeApprovedAt && (
+              <div className="text-sm text-muted-foreground">
+                อนุมัติเมื่อ: {new Date(student.resumeApprovedAt).toLocaleDateString("th-TH", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </div>
+            )}
+            {student.resume && student.resumeStatus && (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open(student.resume!, "_blank")}
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  ดู Resume
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const link = document.createElement("a");
+                    link.href = student.resume!;
+                    link.download = `resume.pdf`;
+                    link.click();
+                  }}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  ดาวน์โหลด
+                </Button>
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="resume-upload">เลือกไฟล์ Resume</Label>
               <input
