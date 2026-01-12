@@ -18,6 +18,7 @@ import {
   Shield,
   Database,
   Briefcase,
+  Eye,
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { useDemoMode } from "@/lib/demo/demo-context";
@@ -89,6 +90,7 @@ const directorMenuItems: MenuItem[] = [
 const studentMenuItems: MenuItem[] = [
   { title: "แดชบอร์ด", url: "/dashboard", icon: LayoutDashboard },
   { title: "ข้อมูลส่วนตัว", url: "/profile", icon: UserCircle },
+  { title: "ดูตัวอย่างโปรไฟล์", url: "/profile/preview", icon: Eye },
   { title: "การฝึกงาน", url: "/internship", icon: ClipboardList },
   { title: "เอกสาร", url: "/documents", icon: FileText },
 ];

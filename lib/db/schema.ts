@@ -114,6 +114,7 @@ export const students = pgTable("students", {
   isCoInternship: boolean("is_cointernship").default(false),
   presentAddressId: uuid("present_address_id").references(() => addresses.id),
   permanentAddressId: uuid("permanent_address_id").references(() => addresses.id),
+  publicProfileToken: varchar("public_profile_token", { length: 64 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

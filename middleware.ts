@@ -47,9 +47,10 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/favicon.ico") ||
     pathname.match(/\.(ico|png|jpg|jpeg|svg|webp)$/);
   const isLandingPage = pathname === "/";
+  const isPublicProfile = pathname.startsWith("/profile/public/");
 
-  // Allow public assets, API routes, and landing page
-  if (isPublicAsset || isApiRoute || isLandingPage) {
+  // Allow public assets, API routes, landing page, and public profile pages
+  if (isPublicAsset || isApiRoute || isLandingPage || isPublicProfile) {
     return NextResponse.next();
   }
 

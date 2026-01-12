@@ -16,7 +16,8 @@ import {
 // Using separate cards instead of tabs for now
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, Copy, RefreshCw, Share2, Eye } from "lucide-react";
+import Link from "next/link";
 
 interface Student {
   id: string;
@@ -45,6 +46,7 @@ interface Student {
   isCoInternship: boolean;
   presentAddressId: string | null;
   permanentAddressId: string | null;
+  publicProfileToken: string | null;
 }
 
 interface Address {
@@ -136,6 +138,9 @@ export default function ProfilePage() {
   const [contactPersonSubDistricts, setContactPersonSubDistricts] = useState<SubDistrict[]>([]);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [publicProfileToken, setPublicProfileToken] = useState<string | null>(null);
+  const [publicUrl, setPublicUrl] = useState<string | null>(null);
+  const [isGeneratingToken, setIsGeneratingToken] = useState(false);
 
   const [presentAddressData, setPresentAddressData] = useState({
     addressLine: "",
@@ -194,6 +199,12 @@ export default function ProfilePage() {
 
           if (studentData.image) {
             setImagePreview(studentData.image);
+          }
+
+          // Set public profile token if exists
+          if (studentData.publicProfileToken) {
+            setPublicProfileToken(studentData.publicProfileToken);
+            setPublicUrl(`${window.location.origin}/profile/public/${studentData.publicProfileToken}`);
           }
 
           // Fetch educations
@@ -634,6 +645,94 @@ export default function ProfilePage() {
       toast.error(error.message || "เกิดข้อผิดพลาดในการบันทึกข้อมูลผู้ติดต่อ");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleGenerateToken = async () => {
+    if (!student) return;
+
+    setIsGeneratingToken(true);
+    try {
+      const response = await fetch(`/api/students/${student.id}/profile/token`, {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPublicProfileToken(data.token);
+        setPublicUrl(data.publicUrl);
+        toast.success("สร้างลิงก์แชร์สำเร็จ");
+        await fetchStudent();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || "เกิดข้อผิดพลาด");
+      }
+    } catch (error) {
+      console.error("Error generating token:", error);
+      toast.error("เกิดข้อผิดพลาดในการสร้างลิงก์");
+    } finally {
+      setIsGeneratingToken(false);
+    }
+  };
+
+  const handleRegenerateToken = async () => {
+    if (!student) return;
+
+    if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการสร้างลิงก์ใหม่? ลิงก์เดิมจะใช้งานไม่ได้")) {
+      return;
+    }
+
+    setIsGeneratingToken(true);
+    try {
+      const response = await fetch(`/api/students/${student.id}/profile/token`, {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPublicProfileToken(data.token);
+        setPublicUrl(data.publicUrl);
+        toast.success("สร้างลิงก์ใหม่สำเร็จ");
+        await fetchStudent();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || "เกิดข้อผิดพลาด");
+      }
+    } catch (error) {
+      console.error("Error regenerating token:", error);
+      toast.error("เกิดข้อผิดพลาดในการสร้างลิงก์");
+    } finally {
+      setIsGeneratingToken(false);
+    }
+  };
+
+  const handleDisablePublicProfile = async () => {
+    if (!student) return;
+
+    if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการปิดการแชร์โปรไฟล์? ลิงก์เดิมจะใช้งานไม่ได้")) {
+      return;
+    }
+
+    setIsGeneratingToken(true);
+    try {
+      const response = await fetch(`/api/students/${student.id}/profile/token`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        setPublicProfileToken(null);
+        setPublicUrl(null);
+        toast.success("ปิดการแชร์โปรไฟล์สำเร็จ");
+        await fetchStudent();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || "เกิดข้อผิดพลาด");
+      }
+    } catch (error) {
+      console.error("Error disabling token:", error);
+      toast.error("เกิดข้อผิดพลาดในการปิดการแชร์");
+    } finally {
+      setIsGeneratingToken(false);
     }
   };
 
@@ -1486,6 +1585,115 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Public Profile Sharing Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Share2 className="h-5 w-5" />
+              แชร์โปรไฟล์
+            </CardTitle>
+            <CardDescription>
+              สร้างลิงก์สาธารณะเพื่อแชร์โปรไฟล์ของคุณกับบริษัทหรือผู้อื่น
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
+              <p className="text-sm text-blue-900 dark:text-blue-100">
+                <strong>คำเตือน:</strong> เมื่อเปิดใช้งานโปรไฟล์สาธารณะ ข้อมูลของคุณจะสามารถเข้าถึงได้โดยผู้ที่ทราบลิงก์
+                ข้อมูลที่ละเอียดอ่อนบางอย่างจะถูกซ่อนไว้ (เช่น เลขบัตรประชาชน ข้อมูลครอบครัว)
+              </p>
+            </div>
+
+            {publicProfileToken && publicUrl ? (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>ลิงก์โปรไฟล์สาธารณะ</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={publicUrl}
+                      readOnly
+                      className="font-mono text-sm"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        navigator.clipboard.writeText(publicUrl);
+                        toast.success("คัดลอกลิงก์แล้ว");
+                      }}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={handleDisablePublicProfile}
+                    disabled={isGeneratingToken}
+                  >
+                    ปิดการแชร์
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleRegenerateToken}
+                    disabled={isGeneratingToken}
+                  >
+                    {isGeneratingToken ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        กำลังสร้าง...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        สร้างลิงก์ใหม่
+                      </>
+                    )}
+                  </Button>
+                  <Link href="/profile/preview">
+                    <Button variant="outline">
+                      <Eye className="mr-2 h-4 w-4" />
+                      ดูตัวอย่าง
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  ยังไม่ได้เปิดใช้งานโปรไฟล์สาธารณะ คลิกปุ่มด้านล่างเพื่อสร้างลิงก์แชร์
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleGenerateToken}
+                    disabled={isGeneratingToken}
+                  >
+                    {isGeneratingToken ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        กำลังสร้าง...
+                      </>
+                    ) : (
+                      <>
+                        <Share2 className="mr-2 h-4 w-4" />
+                        สร้างลิงก์แชร์
+                      </>
+                    )}
+                  </Button>
+                  <Link href="/profile/preview">
+                    <Button variant="outline">
+                      <Eye className="mr-2 h-4 w-4" />
+                      ดูตัวอย่าง
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
