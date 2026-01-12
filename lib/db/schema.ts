@@ -8,11 +8,28 @@ import {
   decimal,
   uuid,
   pgEnum,
+  jsonb,
+  bigint,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 // Enums
-export const userRoleEnum = pgEnum("user_role", ["admin", "director", "student"]);
+export const userRoleEnum = pgEnum("user_role", ["admin", "director", "student", "super-admin"]);
+export const announcementTypeEnum = pgEnum("announcement_type", ["info", "warning", "success", "error"]);
+export const announcementPriorityEnum = pgEnum("announcement_priority", ["low", "medium", "high"]);
+export const notificationTypeEnum = pgEnum("notification_type", ["system", "internship", "student", "company", "announcement"]);
+export const backupTypeEnum = pgEnum("backup_type", ["full", "partial"]);
+
+// Universities table
+export const universities = pgTable("universities", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: varchar("name", { length: 255 }).notNull(),
+  code: varchar("code", { length: 50 }).notNull().unique(),
+  inviteCode: varchar("invite_code", { length: 20 }).notNull().unique(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
 
 // Users table
 export const users = pgTable("users", {
@@ -20,6 +37,8 @@ export const users = pgTable("users", {
   username: varchar("username", { length: 255 }).notNull().unique(),
   password: varchar("password", { length: 255 }).notNull(),
   role: userRoleEnum("role").notNull(),
+  universityId: uuid("university_id").references(() => universities.id),
+  customRoleId: uuid("custom_role_id").references(() => roles.id),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -67,6 +86,7 @@ export const addresses = pgTable("addresses", {
 export const students = pgTable("students", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").references(() => users.id).unique(),
+  universityId: uuid("university_id").references(() => universities.id).notNull(),
   email: varchar("email", { length: 255 }).notNull(),
   idCard: varchar("id_card", { length: 20 }).notNull().unique(),
   firstName: varchar("first_name", { length: 255 }).notNull(),
@@ -98,6 +118,7 @@ export const students = pgTable("students", {
 export const directors = pgTable("directors", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").references(() => users.id).unique(),
+  universityId: uuid("university_id").references(() => universities.id).notNull(),
   firstName: varchar("first_name", { length: 255 }).notNull(),
   lastName: varchar("last_name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }),
@@ -109,6 +130,7 @@ export const directors = pgTable("directors", {
 // Companies table
 export const companies = pgTable("companies", {
   id: uuid("id").primaryKey().defaultRandom(),
+  universityId: uuid("university_id").references(() => universities.id).notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   type: varchar("type", { length: 100 }),
   activities: text("activities"),
@@ -147,7 +169,18 @@ export const coInternships = pgTable("co_internships", {
 });
 
 // Relations
+export const universitiesRelations = relations(universities, ({ many }) => ({
+  users: many(users),
+  students: many(students),
+  directors: many(directors),
+  companies: many(companies),
+}));
+
 export const usersRelations = relations(users, ({ one }) => ({
+  university: one(universities, {
+    fields: [users.universityId],
+    references: [universities.id],
+  }),
   student: one(students, {
     fields: [users.id],
     references: [students.userId],
@@ -159,6 +192,10 @@ export const usersRelations = relations(users, ({ one }) => ({
 }));
 
 export const studentsRelations = relations(students, ({ one, many }) => ({
+  university: one(universities, {
+    fields: [students.universityId],
+    references: [universities.id],
+  }),
   user: one(users, {
     fields: [students.userId],
     references: [users.id],
@@ -176,6 +213,10 @@ export const studentsRelations = relations(students, ({ one, many }) => ({
 }));
 
 export const directorsRelations = relations(directors, ({ one }) => ({
+  university: one(universities, {
+    fields: [directors.universityId],
+    references: [universities.id],
+  }),
   user: one(users, {
     fields: [directors.userId],
     references: [users.id],
@@ -183,6 +224,10 @@ export const directorsRelations = relations(directors, ({ one }) => ({
 }));
 
 export const companiesRelations = relations(companies, ({ one, many }) => ({
+  university: one(universities, {
+    fields: [companies.universityId],
+    references: [universities.id],
+  }),
   address: one(addresses, {
     fields: [companies.addressId],
     references: [addresses.id],
@@ -247,4 +292,173 @@ export const addressesRelations = relations(addresses, ({ one, many }) => ({
   }),
   students: many(students),
   companies: many(companies),
+}));
+
+// Email Templates table
+export const emailTemplates = pgTable("email_templates", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: varchar("name", { length: 255 }).notNull().unique(),
+  subject: varchar("subject", { length: 500 }).notNull(),
+  body: text("body").notNull(),
+  variables: jsonb("variables").$type<string[]>().default([]),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Email Settings table
+export const emailSettings = pgTable("email_settings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  host: varchar("host", { length: 255 }).notNull(),
+  port: integer("port").notNull(),
+  secure: boolean("secure").notNull().default(false),
+  username: varchar("username", { length: 255 }).notNull(),
+  password: varchar("password", { length: 255 }).notNull(),
+  fromEmail: varchar("from_email", { length: 255 }).notNull(),
+  fromName: varchar("from_name", { length: 255 }).notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Announcements table
+export const announcements = pgTable("announcements", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: varchar("title", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  type: announcementTypeEnum("type").notNull().default("info"),
+  priority: announcementPriorityEnum("priority").notNull().default("medium"),
+  isActive: boolean("is_active").notNull().default(true),
+  targetRoles: jsonb("target_roles").$type<string[]>().default([]),
+  targetUniversities: jsonb("target_universities").$type<string[] | null>(),
+  createdBy: uuid("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at"),
+});
+
+// Announcement Reads table
+export const announcementReads = pgTable("announcement_reads", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  announcementId: uuid("announcement_id").references(() => announcements.id).notNull(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  readAt: timestamp("read_at").defaultNow().notNull(),
+});
+
+// Notifications table
+export const notifications = pgTable("notifications", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  type: notificationTypeEnum("type").notNull().default("system"),
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  link: varchar("link", { length: 500 }),
+  isRead: boolean("is_read").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Notification Settings table
+export const notificationSettings = pgTable("notification_settings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => users.id).notNull().unique(),
+  emailEnabled: boolean("email_enabled").notNull().default(true),
+  pushEnabled: boolean("push_enabled").notNull().default(false),
+  inAppEnabled: boolean("in_app_enabled").notNull().default(true),
+  types: jsonb("types").$type<Record<string, { email: boolean; push: boolean; inApp: boolean }>>().default({}),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Roles table
+export const roles = pgTable("roles", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: varchar("name", { length: 255 }).notNull().unique(),
+  description: text("description"),
+  permissions: jsonb("permissions").$type<string[]>().default([]),
+  isSystemRole: boolean("is_system_role").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Role Permissions table (for future granular permissions)
+export const rolePermissions = pgTable("role_permissions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  roleId: uuid("role_id").references(() => roles.id).notNull(),
+  permission: varchar("permission", { length: 100 }).notNull(),
+  resource: varchar("resource", { length: 100 }).notNull(),
+  action: varchar("action", { length: 50 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Backups table
+export const backups = pgTable("backups", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  filename: varchar("filename", { length: 255 }).notNull(),
+  filePath: varchar("file_path", { length: 500 }).notNull(),
+  fileSize: bigint("file_size", { mode: "number" }).notNull(),
+  type: backupTypeEnum("type").notNull().default("full"),
+  tables: jsonb("tables").$type<string[]>(),
+  createdBy: uuid("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at"),
+});
+
+// Relations for new tables
+export const usersCustomRoleRelation = relations(users, ({ one }) => ({
+  customRole: one(roles, {
+    fields: [users.customRoleId],
+    references: [roles.id],
+  }),
+}));
+
+export const rolesRelations = relations(roles, ({ many }) => ({
+  users: many(users),
+  permissions: many(rolePermissions),
+}));
+
+export const rolePermissionsRelations = relations(rolePermissions, ({ one }) => ({
+  role: one(roles, {
+    fields: [rolePermissions.roleId],
+    references: [roles.id],
+  }),
+}));
+
+export const announcementsRelations = relations(announcements, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [announcements.createdBy],
+    references: [users.id],
+  }),
+  reads: many(announcementReads),
+}));
+
+export const announcementReadsRelations = relations(announcementReads, ({ one }) => ({
+  announcement: one(announcements, {
+    fields: [announcementReads.announcementId],
+    references: [announcements.id],
+  }),
+  user: one(users, {
+    fields: [announcementReads.userId],
+    references: [users.id],
+  }),
+}));
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id],
+  }),
+}));
+
+export const notificationSettingsRelations = relations(notificationSettings, ({ one }) => ({
+  user: one(users, {
+    fields: [notificationSettings.userId],
+    references: [users.id],
+  }),
+}));
+
+export const backupsRelations = relations(backups, ({ one }) => ({
+  creator: one(users, {
+    fields: [backups.createdBy],
+    references: [users.id],
+  }),
 }));

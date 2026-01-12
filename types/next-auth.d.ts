@@ -8,6 +8,9 @@ declare module "next-auth" {
       username: string;
       role: UserRole;
       isActive: boolean;
+      universityId: string | null;
+      customRoleId: string | null;
+      customRolePermissions: string[] | null;
     };
   }
 
@@ -16,6 +19,9 @@ declare module "next-auth" {
     username: string;
     role: UserRole;
     isActive: boolean;
+    universityId: string | null;
+    customRoleId: string | null;
+    customRolePermissions: string[] | null;
   }
 }
 
@@ -25,5 +31,8 @@ declare module "next-auth/jwt" {
     role: UserRole;
     username: string;
     isActive: boolean;
+    universityId: string | null;
+    customRoleId: string | null;
+    customRolePermissions: string[] | null;
   }
 }

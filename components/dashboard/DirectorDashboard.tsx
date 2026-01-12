@@ -10,10 +10,13 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AnnouncementBanner } from "@/components/announcements/AnnouncementBanner";
 
 export function DirectorDashboard() {
   return (
     <div className="space-y-6">
+      <AnnouncementBanner />
+      
       <div>
         <h2 className="text-2xl font-bold tracking-tight">ยินดีต้อนรับ, อาจารย์ที่ปรึกษา</h2>
         <p className="text-muted-foreground">ภาพรวมนักศึกษาในความดูแล</p>

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { AnnouncementBanner } from "@/components/announcements/AnnouncementBanner";
 
 const stats = [
   {
@@ -71,6 +72,8 @@ export function AdminDashboard() {
 
   return (
     <div className="space-y-6">
+      <AnnouncementBanner />
+      
       <div>
         <h2 className="text-2xl font-bold tracking-tight">ยินดีต้อนรับ, ผู้ดูแลระบบ</h2>
         <p className="text-muted-foreground">ภาพรวมระบบจัดการการฝึกงานประจำวันนี้</p>

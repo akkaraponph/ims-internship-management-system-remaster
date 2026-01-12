@@ -11,6 +11,12 @@ import {
   ClipboardList,
   BarChart3,
   LogOut,
+  School,
+  Mail,
+  Bell,
+  Megaphone,
+  Shield,
+  Database,
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
@@ -40,12 +46,25 @@ interface MenuItem {
   icon: React.ComponentType<{ className?: string }>;
 }
 
+const superAdminMenuItems: MenuItem[] = [
+  { title: "แดชบอร์ด", url: "/dashboard", icon: LayoutDashboard },
+  { title: "จัดการมหาวิทยาลัย", url: "/universities", icon: School },
+  { title: "จัดการผู้ใช้", url: "/users", icon: Users },
+  { title: "จัดการนักศึกษา", url: "/students", icon: GraduationCap },
+  { title: "จัดการบริษัท", url: "/companies", icon: Building2 },
+  { title: "การฝึกงาน", url: "/internships", icon: ClipboardList },
+  { title: "ประกาศข่าวสาร", url: "/announcements", icon: Megaphone },
+  { title: "รายงาน", url: "/reports", icon: BarChart3 },
+  { title: "ตั้งค่าระบบ", url: "/settings", icon: Settings },
+];
+
 const adminMenuItems: MenuItem[] = [
   { title: "แดชบอร์ด", url: "/dashboard", icon: LayoutDashboard },
   { title: "จัดการผู้ใช้", url: "/users", icon: Users },
   { title: "จัดการนักศึกษา", url: "/students", icon: GraduationCap },
   { title: "จัดการบริษัท", url: "/companies", icon: Building2 },
   { title: "การฝึกงาน", url: "/internships", icon: ClipboardList },
+  { title: "ประกาศข่าวสาร", url: "/announcements", icon: Megaphone },
   { title: "รายงาน", url: "/reports", icon: BarChart3 },
   { title: "ตั้งค่าระบบ", url: "/settings", icon: Settings },
 ];
@@ -55,7 +74,9 @@ const directorMenuItems: MenuItem[] = [
   { title: "นักศึกษาในที่ปรึกษา", url: "/students", icon: GraduationCap },
   { title: "บริษัท", url: "/companies", icon: Building2 },
   { title: "สถานะการฝึกงาน", url: "/internships", icon: ClipboardList },
+  { title: "ประกาศข่าวสาร", url: "/announcements", icon: Megaphone },
   { title: "รายงาน", url: "/reports", icon: BarChart3 },
+  { title: "ตั้งค่ามหาวิทยาลัย", url: "/settings/university", icon: School },
 ];
 
 const studentMenuItems: MenuItem[] = [
@@ -73,6 +94,8 @@ export function AppSidebar() {
 
   const getMenuItems = (): MenuItem[] => {
     switch (session?.user?.role) {
+      case "super-admin":
+        return superAdminMenuItems;
       case "admin":
         return adminMenuItems;
       case "director":
@@ -86,6 +109,8 @@ export function AppSidebar() {
 
   const getRoleLabel = (): string => {
     switch (session?.user?.role) {
+      case "super-admin":
+        return "ผู้ดูแลระบบหลัก";
       case "admin":
         return "ผู้ดูแลระบบ";
       case "director":

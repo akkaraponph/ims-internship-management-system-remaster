@@ -9,3 +9,22 @@ NEXTAUTH_SECRET=your-secret-key-change-this-in-production
 
 # Environment
 NODE_ENV=development
+
+# Seed Users (for demo/testing)
+# JSON array of users to create. Run: bun run seed:users
+# Super-admin users don't need universityCode
+# Directors and students should specify universityCode (or will use DEFAULT)
+SEED_USERS=[{"username":"superadmin","password":"admin123","role":"super-admin"},{"username":"director1","password":"director123","role":"director","universityCode":"DEFAULT","firstName":"John","lastName":"Doe","email":"director@university.edu","phone":"0123456789"},{"username":"student1","password":"student123","role":"student","universityCode":"DEFAULT","email":"student@university.edu","idCard":"1234567890123","firstName":"Jane","lastName":"Smith"}]
+
+# Email Settings (SMTP)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USERNAME=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+SMTP_FROM_EMAIL=noreply@example.com
+SMTP_FROM_NAME=Internship Management System
+
+# Backup Settings
+BACKUP_DIR=./backups
+BACKUP_RETENTION_DAYS=30

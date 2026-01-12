@@ -9,7 +9,7 @@ export async function middleware(request: NextRequest) {
   });
 
   const { pathname } = request.nextUrl;
-  const isAuthPage = pathname.startsWith("/login");
+  const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/register");
   const isApiRoute = pathname.startsWith("/api");
   const isPublicAsset = 
     pathname.startsWith("/_next") ||
@@ -40,14 +40,23 @@ export async function middleware(request: NextRequest) {
   const isAdminRoute = pathname.startsWith("/users") || 
                       pathname.startsWith("/settings");
   const isDirectorRoute = pathname.startsWith("/reports");
+  const isSuperAdminRoute = pathname.startsWith("/universities");
+  const isAnnouncementRoute = pathname.startsWith("/announcements");
 
-  if (isAdminRoute && token.role !== "admin") {
+  if (isSuperAdminRoute && token.role !== "super-admin") {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  if (isDirectorRoute && token.role !== "director" && token.role !== "admin") {
+  if (isAdminRoute && token.role !== "admin" && token.role !== "super-admin") {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
+
+  if (isDirectorRoute && token.role !== "director" && token.role !== "admin" && token.role !== "super-admin") {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
+  // Announcements are accessible to all authenticated users
+  // But creation/editing is restricted in the API routes
 
   return NextResponse.next();
 }

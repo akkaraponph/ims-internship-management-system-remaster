@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { useSession } from "next-auth/react";
+import { AnnouncementBanner } from "@/components/announcements/AnnouncementBanner";
 
 const profileCompletion = {
   personal: false,
@@ -43,6 +44,8 @@ export function StudentDashboard() {
 
   return (
     <div className="space-y-6">
+      <AnnouncementBanner />
+      
       <div>
         <h2 className="text-2xl font-bold tracking-tight">
           สวัสดี, {user?.username || "นักศึกษา"}

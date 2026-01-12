@@ -1,10 +1,9 @@
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "./auth";
+import { auth } from "./auth";
 import { redirect } from "next/navigation";
 import type { UserRole } from "@/types";
 
 export async function getCurrentUser() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   return session?.user ?? null;
 }
 

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { updateUserSchema } from "@/lib/validations";
@@ -12,7 +11,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -36,8 +35,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== "admin") {
+    const session = await auth();
+    if (!session || (session.user.role !== "admin" && session.user.role !== "super-admin")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -51,6 +50,7 @@ export async function PATCH(
       updateData.password = await bcrypt.hash(validatedData.password, 10);
     }
     if (validatedData.role) updateData.role = validatedData.role;
+    if (validatedData.customRoleId !== undefined) updateData.customRoleId = validatedData.customRoleId;
     if (validatedData.isActive !== undefined) updateData.isActive = validatedData.isActive;
 
     const updatedUser = await db
@@ -78,8 +78,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== "admin") {
+    const session = await auth();
+    if (!session || (session.user.role !== "admin" && session.user.role !== "super-admin")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

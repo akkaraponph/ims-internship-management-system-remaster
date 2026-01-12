@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const userRoleSchema = z.enum(["admin", "director", "student"]);
+export const userRoleSchema = z.enum(["admin", "director", "student", "super-admin"]);
 
 export const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -18,6 +18,7 @@ export const updateUserSchema = z.object({
   username: z.string().min(3).optional(),
   password: z.string().min(6).optional(),
   role: userRoleSchema.optional(),
+  customRoleId: z.string().uuid().nullable().optional(),
   isActive: z.boolean().optional(),
 });
 
