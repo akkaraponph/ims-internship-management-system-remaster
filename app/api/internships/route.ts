@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { internships, students, companyUsers, users } from "@/lib/db/schema";
 import { createInternshipSchema } from "@/lib/validations";
-import { eq, inArray, and, or } from "drizzle-orm";
+import { eq, inArray, and, or, sql } from "drizzle-orm";
 import { createNotification } from "@/lib/notifications/notification-service";
 
 export async function GET(request: NextRequest) {
@@ -32,10 +32,20 @@ export async function GET(request: NextRequest) {
 
       const conditions = [eq(internships.studentId, studentRecords[0].id)];
       if (isSend !== null) {
-        conditions.push(eq(internships.isSend, isSend));
+        if (isSend === "0") {
+          // Handle both null and "0" for not-sent
+          conditions.push(or(sql`${internships.isSend} IS NULL`, eq(internships.isSend, "0")));
+        } else {
+          conditions.push(eq(internships.isSend, isSend));
+        }
       }
       if (isConfirm !== null) {
-        conditions.push(eq(internships.isConfirm, isConfirm));
+        if (isConfirm === "0") {
+          // Handle both null and "0" for not-confirmed
+          conditions.push(or(sql`${internships.isConfirm} IS NULL`, eq(internships.isConfirm, "0")));
+        } else {
+          conditions.push(eq(internships.isConfirm, isConfirm));
+        }
       }
       if (status) {
         conditions.push(eq(internships.status, status));
@@ -52,10 +62,20 @@ export async function GET(request: NextRequest) {
     if (session.user.role === "company" && session.user.companyId) {
       const conditions = [eq(internships.companyId, session.user.companyId)];
       if (isSend !== null) {
-        conditions.push(eq(internships.isSend, isSend));
+        if (isSend === "0") {
+          // Handle both null and "0" for not-sent
+          conditions.push(or(sql`${internships.isSend} IS NULL`, eq(internships.isSend, "0")));
+        } else {
+          conditions.push(eq(internships.isSend, isSend));
+        }
       }
       if (isConfirm !== null) {
-        conditions.push(eq(internships.isConfirm, isConfirm));
+        if (isConfirm === "0") {
+          // Handle both null and "0" for not-confirmed
+          conditions.push(or(sql`${internships.isConfirm} IS NULL`, eq(internships.isConfirm, "0")));
+        } else {
+          conditions.push(eq(internships.isConfirm, isConfirm));
+        }
       }
       if (status) {
         conditions.push(eq(internships.status, status));
@@ -72,10 +92,20 @@ export async function GET(request: NextRequest) {
     if (session.user.role === "super-admin") {
       const conditions = [];
       if (isSend !== null) {
-        conditions.push(eq(internships.isSend, isSend));
+        if (isSend === "0") {
+          // Handle both null and "0" for not-sent
+          conditions.push(or(sql`${internships.isSend} IS NULL`, eq(internships.isSend, "0")));
+        } else {
+          conditions.push(eq(internships.isSend, isSend));
+        }
       }
       if (isConfirm !== null) {
-        conditions.push(eq(internships.isConfirm, isConfirm));
+        if (isConfirm === "0") {
+          // Handle both null and "0" for not-confirmed
+          conditions.push(or(sql`${internships.isConfirm} IS NULL`, eq(internships.isConfirm, "0")));
+        } else {
+          conditions.push(eq(internships.isConfirm, isConfirm));
+        }
       }
       if (status) {
         conditions.push(eq(internships.status, status));
@@ -105,10 +135,20 @@ export async function GET(request: NextRequest) {
       // Get internships for these students
       const conditions = [inArray(internships.studentId, studentIds)];
       if (isSend !== null) {
-        conditions.push(eq(internships.isSend, isSend));
+        if (isSend === "0") {
+          // Handle both null and "0" for not-sent
+          conditions.push(or(sql`${internships.isSend} IS NULL`, eq(internships.isSend, "0")));
+        } else {
+          conditions.push(eq(internships.isSend, isSend));
+        }
       }
       if (isConfirm !== null) {
-        conditions.push(eq(internships.isConfirm, isConfirm));
+        if (isConfirm === "0") {
+          // Handle both null and "0" for not-confirmed
+          conditions.push(or(sql`${internships.isConfirm} IS NULL`, eq(internships.isConfirm, "0")));
+        } else {
+          conditions.push(eq(internships.isConfirm, isConfirm));
+        }
       }
       if (status) {
         conditions.push(eq(internships.status, status));

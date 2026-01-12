@@ -31,8 +31,9 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, CheckCircle, XCircle, Send, RotateCcw, Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Internship {
   id: string;
@@ -69,6 +70,8 @@ export default function InternshipsPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedInternship, setSelectedInternship] = useState<Internship | null>(null);
+  const [workflowFilter, setWorkflowFilter] = useState<"all" | "not-sent" | "pending" | "confirmed">("all");
+  const [processingActions, setProcessingActions] = useState<Set<string>>(new Set());
   const [formData, setFormData] = useState({
     studentId: "",
     companyId: "",
@@ -92,11 +95,30 @@ export default function InternshipsPage() {
     fetchInternships();
     fetchStudents();
     fetchCompanies();
-  }, []);
+  }, [workflowFilter]);
 
   const fetchInternships = async () => {
     try {
-      const response = await fetch("/api/internships");
+      setIsLoading(true);
+      let url = "/api/internships";
+      const params = new URLSearchParams();
+      
+      if (workflowFilter === "not-sent") {
+        params.append("isSend", "0");
+        params.append("isConfirm", "0");
+      } else if (workflowFilter === "pending") {
+        params.append("isSend", "1");
+        params.append("isConfirm", "0");
+      } else if (workflowFilter === "confirmed") {
+        params.append("isSend", "1");
+        params.append("isConfirm", "1");
+      }
+      
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+      
+      const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
         setInternships(Array.isArray(data) ? data : [data]);
@@ -163,6 +185,168 @@ export default function InternshipsPage() {
         return "destructive";
       default:
         return "secondary";
+    }
+  };
+
+  // Workflow status helper functions
+  const getWorkflowStatus = (internship: Internship): WorkflowStatus => {
+    const isSend = internship.isSend === "1";
+    const isConfirm = internship.isConfirm === "1";
+    
+    if (isSend && isConfirm) {
+      return "confirmed";
+    } else if (isSend && !isConfirm) {
+      return "pending";
+    } else {
+      return "not-sent";
+    }
+  };
+
+  const getWorkflowStatusLabel = (status: WorkflowStatus): string => {
+    const labels: Record<WorkflowStatus, string> = {
+      "not-sent": "ยังไม่ส่ง",
+      "pending": "รอการยืนยัน",
+      "confirmed": "ยืนยันแล้ว",
+    };
+    return labels[status];
+  };
+
+  const getWorkflowBadgeVariant = (status: WorkflowStatus): "default" | "secondary" | "destructive" => {
+    switch (status) {
+      case "confirmed":
+        return "default";
+      case "pending":
+        return "secondary";
+      case "not-sent":
+        return "secondary";
+      default:
+        return "secondary";
+    }
+  };
+
+  const canPerformWorkflowAction = (internship: Internship, action: string): boolean => {
+    const workflowStatus = getWorkflowStatus(internship);
+    
+    switch (action) {
+      case "send":
+        return workflowStatus === "not-sent";
+      case "confirm":
+        return workflowStatus === "pending";
+      case "return":
+        return workflowStatus === "pending" || workflowStatus === "confirmed";
+      case "unconfirm":
+        return workflowStatus === "confirmed";
+      default:
+        return false;
+    }
+  };
+
+  // Workflow action handlers
+  const handleSend = async (internshipId: string) => {
+    if (!confirm("ยืนยันการส่งแบบฟอร์มนี้?")) return;
+    
+    setProcessingActions(prev => new Set(prev).add(internshipId));
+    try {
+      const response = await fetch(`/api/internships/${internshipId}/send`, {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        toast.success("ส่งแบบฟอร์มสำเร็จ");
+        fetchInternships();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || "เกิดข้อผิดพลาด");
+      }
+    } catch (error) {
+      toast.error("เกิดข้อผิดพลาด");
+    } finally {
+      setProcessingActions(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(internshipId);
+        return newSet;
+      });
+    }
+  };
+
+  const handleConfirm = async (internshipId: string) => {
+    if (!confirm("ยืนยันการอนุมัติแบบฟอร์มนี้?")) return;
+    
+    setProcessingActions(prev => new Set(prev).add(internshipId));
+    try {
+      const response = await fetch(`/api/internships/${internshipId}/confirm`, {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        toast.success("อนุมัติแบบฟอร์มสำเร็จ");
+        fetchInternships();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || "เกิดข้อผิดพลาด");
+      }
+    } catch (error) {
+      toast.error("เกิดข้อผิดพลาด");
+    } finally {
+      setProcessingActions(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(internshipId);
+        return newSet;
+      });
+    }
+  };
+
+  const handleReturn = async (internshipId: string) => {
+    if (!confirm("ยืนยันการส่งคืนแบบฟอร์มให้กับนักศึกษา?")) return;
+    
+    setProcessingActions(prev => new Set(prev).add(internshipId));
+    try {
+      const response = await fetch(`/api/internships/${internshipId}/return`, {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        toast.success("ส่งคืนแบบฟอร์มสำเร็จ");
+        fetchInternships();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || "เกิดข้อผิดพลาด");
+      }
+    } catch (error) {
+      toast.error("เกิดข้อผิดพลาด");
+    } finally {
+      setProcessingActions(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(internshipId);
+        return newSet;
+      });
+    }
+  };
+
+  const handleUnconfirm = async (internshipId: string) => {
+    if (!confirm("ยืนยันการเปลี่ยนสถานะกลับเป็นรอการยืนยัน?")) return;
+    
+    setProcessingActions(prev => new Set(prev).add(internshipId));
+    try {
+      const response = await fetch(`/api/internships/${internshipId}/unconfirm`, {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        toast.success("เปลี่ยนสถานะสำเร็จ");
+        fetchInternships();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || "เกิดข้อผิดพลาด");
+      }
+    } catch (error) {
+      toast.error("เกิดข้อผิดพลาด");
+    } finally {
+      setProcessingActions(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(internshipId);
+        return newSet;
+      });
     }
   };
 
@@ -308,7 +492,10 @@ export default function InternshipsPage() {
   }
 
   const isSuperAdmin = session?.user?.role === "super-admin";
-  const canManage = isSuperAdmin || session?.user?.role === "admin";
+  const isAdmin = session?.user?.role === "admin";
+  const isDirector = session?.user?.role === "director";
+  const canManage = isSuperAdmin || isAdmin;
+  const canPerformWorkflow = isSuperAdmin || isAdmin || isDirector;
 
   return (
     <div className="space-y-6">
@@ -415,6 +602,25 @@ export default function InternshipsPage() {
         )}
       </div>
 
+      {/* Workflow Filter */}
+      {canPerformWorkflow && (
+        <Card>
+          <CardHeader>
+            <CardTitle>กรองตามสถานะการทำงาน</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs value={workflowFilter} onValueChange={(value) => setWorkflowFilter(value as typeof workflowFilter)}>
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="all">ทั้งหมด</TabsTrigger>
+                <TabsTrigger value="not-sent">ยังไม่ส่ง</TabsTrigger>
+                <TabsTrigger value="pending">รอการยืนยัน</TabsTrigger>
+                <TabsTrigger value="confirmed">ยืนยันแล้ว</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>รายการฝึกงาน</CardTitle>
@@ -427,6 +633,7 @@ export default function InternshipsPage() {
                 <TableHead>นักศึกษา</TableHead>
                 <TableHead>บริษัท</TableHead>
                 <TableHead>สถานะ</TableHead>
+                {canPerformWorkflow && <TableHead>สถานะการทำงาน</TableHead>}
                 <TableHead>วันที่เริ่มต้น</TableHead>
                 <TableHead>วันที่สิ้นสุด</TableHead>
                 <TableHead className="text-right">การจัดการ</TableHead>
@@ -435,56 +642,133 @@ export default function InternshipsPage() {
             <TableBody>
               {internships.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground">
+                  <TableCell colSpan={canPerformWorkflow ? 7 : 6} className="text-center text-muted-foreground">
                     ไม่พบข้อมูลการฝึกงาน
                   </TableCell>
                 </TableRow>
               ) : (
-                internships.map((internship) => (
-                  <TableRow key={internship.id}>
-                    <TableCell className="font-medium">
-                      {getStudentName(internship.studentId)}
-                    </TableCell>
-                    <TableCell>{getCompanyName(internship.companyId)}</TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusBadgeVariant(internship.status)}>
-                        {getStatusLabel(internship.status)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {internship.startDate
-                        ? new Date(internship.startDate).toLocaleDateString("th-TH")
-                        : "-"}
-                    </TableCell>
-                    <TableCell>
-                      {internship.endDate
-                        ? new Date(internship.endDate).toLocaleDateString("th-TH")
-                        : "-"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        {canManage && (
-                          <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openEditDialog(internship)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openDeleteDialog(internship)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+                internships.map((internship) => {
+                  const workflowStatus = getWorkflowStatus(internship);
+                  const isProcessing = processingActions.has(internship.id);
+                  
+                  return (
+                    <TableRow key={internship.id}>
+                      <TableCell className="font-medium">
+                        {getStudentName(internship.studentId)}
+                      </TableCell>
+                      <TableCell>{getCompanyName(internship.companyId)}</TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusBadgeVariant(internship.status)}>
+                          {getStatusLabel(internship.status)}
+                        </Badge>
+                      </TableCell>
+                      {canPerformWorkflow && (
+                        <TableCell>
+                          <Badge 
+                            variant={getWorkflowBadgeVariant(workflowStatus)}
+                            className={workflowStatus === "confirmed" ? "bg-green-500" : ""}
+                          >
+                            {getWorkflowStatusLabel(workflowStatus)}
+                          </Badge>
+                        </TableCell>
+                      )}
+                      <TableCell>
+                        {internship.startDate
+                          ? new Date(internship.startDate).toLocaleDateString("th-TH")
+                          : "-"}
+                      </TableCell>
+                      <TableCell>
+                        {internship.endDate
+                          ? new Date(internship.endDate).toLocaleDateString("th-TH")
+                          : "-"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2 flex-wrap">
+                          {canPerformWorkflow && (
+                            <>
+                              {canPerformWorkflowAction(internship, "send") && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleSend(internship.id)}
+                                  disabled={isProcessing}
+                                >
+                                  {isProcessing ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Send className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              )}
+                              {canPerformWorkflowAction(internship, "confirm") && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleConfirm(internship.id)}
+                                  disabled={isProcessing}
+                                >
+                                  {isProcessing ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <CheckCircle className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              )}
+                              {canPerformWorkflowAction(internship, "unconfirm") && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleUnconfirm(internship.id)}
+                                  disabled={isProcessing}
+                                >
+                                  {isProcessing ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <XCircle className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              )}
+                              {canPerformWorkflowAction(internship, "return") && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleReturn(internship.id)}
+                                  disabled={isProcessing}
+                                >
+                                  {isProcessing ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <RotateCcw className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              )}
+                            </>
+                          )}
+                          {canManage && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openEditDialog(internship)}
+                                disabled={isProcessing}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openDeleteDialog(internship)}
+                                disabled={isProcessing}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
