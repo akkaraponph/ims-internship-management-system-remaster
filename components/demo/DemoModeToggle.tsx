@@ -13,10 +13,18 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { DemoRoleSelector } from "./DemoRoleSelector";
 import { useState } from "react";
 
 export function DemoModeToggle() {
-  const { isDemo, toggleDemoMode, resetDemo } = useDemoMode();
+  const {
+    isDemo,
+    selectedRole,
+    showRoleSelector,
+    toggleDemoMode,
+    closeRoleSelector,
+    selectRole,
+  } = useDemoMode();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const handleToggle = () => {
@@ -32,13 +40,24 @@ export function DemoModeToggle() {
     setIsDialogOpen(false);
   };
 
+  const getRoleLabel = (role: string | null): string => {
+    const roleMap: Record<string, string> = {
+      "super-admin": "ผู้ดูแลระบบหลัก",
+      admin: "ผู้ดูแลระบบ",
+      director: "อาจารย์ที่ปรึกษา",
+      student: "นักศึกษา",
+      company: "บริษัท",
+    };
+    return roleMap[role || ""] || "";
+  };
+
   return (
     <>
       <div className="flex items-center gap-2">
         {isDemo && (
           <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-600 dark:text-yellow-400">
             <TestTube className="mr-1 h-3 w-3" />
-            Demo Mode
+            {selectedRole ? `Demo: ${getRoleLabel(selectedRole)}` : "Demo Mode"}
           </Badge>
         )}
         <Button
@@ -71,6 +90,14 @@ export function DemoModeToggle() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <DemoRoleSelector
+        open={showRoleSelector}
+        onOpenChange={closeRoleSelector}
+        onRoleSelected={() => {
+          closeRoleSelector();
+        }}
+      />
     </>
   );
 }

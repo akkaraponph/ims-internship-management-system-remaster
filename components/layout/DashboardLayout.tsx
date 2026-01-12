@@ -3,7 +3,9 @@
 import { ReactNode, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useDemoMode } from "@/lib/demo/demo-context";
-import { getSession } from "@/lib/demo/demo-service";
+import { getSession, getSelectedRole } from "@/lib/demo/demo-service";
+import { useRouter } from "next/navigation";
+import { DemoRoleSelector } from "@/components/demo/DemoRoleSelector";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { Separator } from "@/components/ui/separator";
@@ -25,19 +27,28 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children, title = "แดชบอร์ด" }: DashboardLayoutProps) {
   const { data: session, status } = useSession();
-  const { isDemo } = useDemoMode();
+  const { isDemo, showRoleSelector, closeRoleSelector, selectRole } = useDemoMode();
+  const router = useRouter();
   const [demoSession, setDemoSession] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (isDemo) {
       const sessionData = getSession();
+      const selectedRole = getSelectedRole();
+      
+      // If demo mode is active but no role is selected, redirect to login
+      if (!selectedRole && !sessionData) {
+        router.push("/login?demo=true");
+        return;
+      }
+      
       setDemoSession(sessionData);
       setIsLoading(false);
     } else {
       setIsLoading(false);
     }
-  }, [isDemo]);
+  }, [isDemo, router]);
 
   if (isLoading || (isDemo && !demoSession && status === "loading")) {
     return (
@@ -83,6 +94,15 @@ export function DashboardLayout({ children, title = "แดชบอร์ด" }
           </main>
         </SidebarInset>
       </div>
+
+      <DemoRoleSelector
+        open={showRoleSelector}
+        onOpenChange={closeRoleSelector}
+        onRoleSelected={() => {
+          closeRoleSelector();
+          window.location.reload();
+        }}
+      />
     </SidebarProvider>
   );
 }

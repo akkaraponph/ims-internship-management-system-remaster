@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label";
 import { GraduationCap, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
+import { AuthNav } from "@/components/landing/AuthNav";
+import { Footer } from "@/components/landing/Footer";
 
 interface UniversityInfo {
   id: string;
@@ -104,8 +106,10 @@ export default function RegisterPage() {
   });
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-2xl">
+    <div className="min-h-screen bg-background flex flex-col">
+      <AuthNav />
+      <div className="flex-1 flex items-center justify-center p-4 py-8">
+        <Card className="w-full max-w-2xl">
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-center mb-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -329,6 +333,8 @@ export default function RegisterPage() {
           </form>
         </CardContent>
       </Card>
+      </div>
+      <Footer />
     </div>
   );
 }

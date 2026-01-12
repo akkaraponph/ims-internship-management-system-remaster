@@ -1,6 +1,7 @@
 "use client";
 
 import { LandingNav } from "./LandingNav";
+import { Footer } from "./Footer";
 import { HeroSection } from "./HeroSection";
 import { FeaturesSection } from "./FeaturesSection";
 import { AboutSection } from "./AboutSection";
@@ -18,26 +19,7 @@ export function LandingPage() {
         <BenefitsSection />
         <CTASection />
       </main>
-      <footer className="border-t border-border bg-muted/30 py-8 px-4 sm:px-6 lg:px-8">
-        <div className="container mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-muted-foreground text-center md:text-left">
-              © {new Date().getFullYear()} ระบบจัดการการฝึกงาน. สงวนลิขสิทธิ์.
-            </p>
-            <div className="flex gap-6 text-sm text-muted-foreground">
-              <a href="#features" className="hover:text-foreground transition-colors">
-                คุณสมบัติ
-              </a>
-              <a href="#about" className="hover:text-foreground transition-colors">
-                เกี่ยวกับ
-              </a>
-              <a href="#benefits" className="hover:text-foreground transition-colors">
-                ข้อดี
-              </a>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

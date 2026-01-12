@@ -2,15 +2,23 @@
 
 import { DEMO_STORAGE_KEYS, type DemoStorageKey } from "./storage-keys";
 import { generateMockData } from "./mock-data";
+import type { UserRole, User } from "@/types";
 
 export function isDemoMode(): boolean {
   if (typeof window === "undefined") return false;
   return localStorage.getItem(DEMO_STORAGE_KEYS.MODE) === "true";
 }
 
-export function enableDemoMode(): void {
+export function enableDemoMode(role?: UserRole): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(DEMO_STORAGE_KEYS.MODE, "true");
+  // Set cookie for server-side access
+  document.cookie = `demo_mode=true; path=/; max-age=86400`;
+  
+  // Save role if provided
+  if (role) {
+    setSelectedRole(role);
+  }
   
   // Initialize mock data if not already present
   if (!localStorage.getItem(DEMO_STORAGE_KEYS.UNIVERSITIES)) {
@@ -31,10 +39,14 @@ export function enableDemoMode(): void {
 export function disableDemoMode(): void {
   if (typeof window === "undefined") return;
   
-  // Clear all demo data
+  // Clear all demo data including selected role
   Object.values(DEMO_STORAGE_KEYS).forEach((key) => {
     localStorage.removeItem(key);
   });
+  clearSelectedRole();
+  clearSession();
+  // Clear demo mode cookie
+  document.cookie = "demo_mode=; path=/; max-age=0";
 }
 
 export function getEntity<T>(key: DemoStorageKey): T[] {
@@ -156,28 +168,91 @@ export function setSession(session: any): void {
   localStorage.setItem(DEMO_STORAGE_KEYS.SESSION, JSON.stringify(session));
   // Also set cookie for server-side access
   document.cookie = `demo_session=${encodeURIComponent(JSON.stringify(session))}; path=/; max-age=86400`;
+  // Also set demo_mode cookie to indicate demo mode is active
+  document.cookie = `demo_mode=true; path=/; max-age=86400`;
+  // Dispatch custom event to notify session change
+  window.dispatchEvent(new Event("demo-session-changed"));
 }
 
 export function clearSession(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(DEMO_STORAGE_KEYS.SESSION);
-  // Clear cookie
+  // Clear cookies
   document.cookie = "demo_session=; path=/; max-age=0";
+  // Dispatch custom event to notify session change
+  window.dispatchEvent(new Event("demo-session-changed"));
 }
 
 export function resetDemoData(): void {
   if (typeof window === "undefined") return;
   
-  // Clear all demo data except mode
+  // Clear all demo data except mode and selected role
   const mode = localStorage.getItem(DEMO_STORAGE_KEYS.MODE);
+  const selectedRole = getSelectedRole();
   Object.values(DEMO_STORAGE_KEYS).forEach((key) => {
-    if (key !== DEMO_STORAGE_KEYS.MODE) {
+    if (key !== DEMO_STORAGE_KEYS.MODE && key !== DEMO_STORAGE_KEYS.SELECTED_ROLE) {
       localStorage.removeItem(key);
     }
   });
   
   // Regenerate mock data
   if (mode === "true") {
-    enableDemoMode();
+    enableDemoMode(selectedRole || undefined);
   }
+}
+
+// Role selection functions
+export function getSelectedRole(): UserRole | null {
+  if (typeof window === "undefined") return null;
+  const role = localStorage.getItem(DEMO_STORAGE_KEYS.SELECTED_ROLE);
+  if (!role) return null;
+  return role as UserRole;
+}
+
+export function setSelectedRole(role: UserRole): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(DEMO_STORAGE_KEYS.SELECTED_ROLE, role);
+}
+
+export function clearSelectedRole(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(DEMO_STORAGE_KEYS.SELECTED_ROLE);
+}
+
+// Auto-login function
+export function loginAsRole(role: UserRole): { success: boolean; session?: any; error?: string } {
+  if (typeof window === "undefined") {
+    return { success: false, error: "Not in browser environment" };
+  }
+
+  const users = getEntity<User>(DEMO_STORAGE_KEYS.USERS);
+  const user = users.find((u) => u.role === role && u.isActive);
+
+  if (!user) {
+    return { success: false, error: `No active user found for role: ${role}` };
+  }
+
+  // Get companyId if company user
+  let companyId = null;
+  if (role === "company") {
+    const companyUsers = getEntity(DEMO_STORAGE_KEYS.COMPANY_USERS);
+    const companyUser = companyUsers.find((cu: any) => cu.userId === user.id);
+    if (companyUser) {
+      companyId = companyUser.companyId;
+    }
+  }
+
+  const sessionData = {
+    id: user.id,
+    username: user.username,
+    role: user.role,
+    isActive: user.isActive,
+    universityId: user.universityId,
+    companyId: companyId,
+  };
+
+  setSession(sessionData);
+  setSelectedRole(role);
+
+  return { success: true, session: sessionData };
 }

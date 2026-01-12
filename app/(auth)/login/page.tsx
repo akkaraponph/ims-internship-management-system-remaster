@@ -13,15 +13,76 @@ import { Label } from "@/components/ui/label";
 import { GraduationCap } from "lucide-react";
 import { toast } from "sonner";
 import { useDemoMode } from "@/lib/demo/demo-context";
-import { getEntity, setSession } from "@/lib/demo/demo-service";
+import { getEntity, setSession, loginAsRole } from "@/lib/demo/demo-service";
 import { DEMO_STORAGE_KEYS } from "@/lib/demo/storage-keys";
-import { DemoModeToggle } from "@/components/demo/DemoModeToggle";
-import type { User } from "@/types";
+import { AuthNav } from "@/components/landing/AuthNav";
+import { Footer } from "@/components/landing/Footer";
+import { DemoRoleSelector } from "@/components/demo/DemoRoleSelector";
+import { useEffect } from "react";
+import type { User, UserRole } from "@/types";
 
 export default function LoginPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const { isDemo } = useDemoMode();
+  const [isAutoLoggingIn, setIsAutoLoggingIn] = useState(false);
+  const { isDemo, selectedRole, showRoleSelector, closeRoleSelector, selectRole } = useDemoMode();
+
+  // Auto-login if role is selected
+  useEffect(() => {
+    if (isDemo && selectedRole && !isAutoLoggingIn) {
+      setIsAutoLoggingIn(true);
+      const result = loginAsRole(selectedRole);
+      if (result.success) {
+        toast.success(`เข้าสู่ระบบเป็น ${getRoleLabel(selectedRole)}`);
+        // Dispatch custom event to notify session change
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("demo-session-changed"));
+        }
+        // Use window.location.href for more reliable redirect in demo mode
+        setTimeout(() => {
+          window.location.href = "/dashboard";
+        }, 100);
+      } else {
+        setIsAutoLoggingIn(false);
+        toast.error(result.error || "ไม่สามารถเข้าสู่ระบบได้");
+      }
+    }
+  }, [isDemo, selectedRole, router, isAutoLoggingIn]);
+
+  const getRoleLabel = (role: UserRole | null): string => {
+    const roleMap: Record<string, string> = {
+      "super-admin": "ผู้ดูแลระบบหลัก",
+      admin: "ผู้ดูแลระบบ",
+      director: "อาจารย์ที่ปรึกษา",
+      student: "นักศึกษา",
+      company: "บริษัท",
+    };
+    return roleMap[role || ""] || "";
+  };
+
+  const handleQuickLogin = async (role: UserRole) => {
+    setIsLoading(true);
+    try {
+      const result = loginAsRole(role);
+      if (result.success) {
+        toast.success(`เข้าสู่ระบบเป็น ${getRoleLabel(role)}`);
+        // Dispatch custom event to notify session change
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("demo-session-changed"));
+        }
+        // Use window.location.href for more reliable redirect in demo mode
+        setTimeout(() => {
+          window.location.href = "/dashboard";
+        }, 100);
+      } else {
+        toast.error(result.error || "ไม่สามารถเข้าสู่ระบบได้");
+        setIsLoading(false);
+      }
+    } catch (error) {
+      toast.error("เกิดข้อผิดพลาดในการเข้าสู่ระบบ");
+      setIsLoading(false);
+    }
+  };
 
   const formik = useFormik({
     initialValues: {
@@ -64,8 +125,14 @@ export default function LoginPage() {
 
           setSession(sessionData);
           toast.success("เข้าสู่ระบบสำเร็จ (Demo Mode)");
-          router.push("/dashboard");
-          router.refresh();
+          // Dispatch custom event to notify session change
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new Event("demo-session-changed"));
+          }
+          // Use window.location.href for more reliable redirect in demo mode
+          setTimeout(() => {
+            window.location.href = "/dashboard";
+          }, 100);
         } else {
           // Real mode: use NextAuth
           const result = await signIn("credentials", {
@@ -91,11 +158,10 @@ export default function LoginPage() {
   });
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <div className="absolute top-4 right-4">
-        <DemoModeToggle />
-      </div>
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen bg-background flex flex-col">
+      <AuthNav />
+      <div className="flex-1 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-center mb-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -148,23 +214,58 @@ export default function LoginPage() {
             </Button>
 
             {isDemo && (
-              <div className="mt-4 p-3 bg-muted rounded-lg text-sm">
-                <p className="font-semibold mb-2">บัญชี Demo:</p>
-                <ul className="space-y-1 text-muted-foreground">
-                  <li>• superadmin (Super Admin)</li>
-                  <li>• admin1 (Admin)</li>
-                  <li>• director1 (Director)</li>
-                  <li>• student1-12 (Student)</li>
-                  <li>• company1-8 (Company)</li>
-                </ul>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  รหัสผ่าน: ใช้รหัสผ่านใดก็ได้ในโหมด Demo
-                </p>
+              <div className="mt-4 space-y-4">
+                {selectedRole ? (
+                  <div className="p-3 bg-muted rounded-lg">
+                    <p className="text-sm font-semibold mb-2">
+                      บทบาทที่เลือก: {getRoleLabel(selectedRole)}
+                    </p>
+                    {isAutoLoggingIn ? (
+                      <p className="text-sm text-muted-foreground">
+                        กำลังเข้าสู่ระบบอัตโนมัติ...
+                      </p>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => handleQuickLogin(selectedRole)}
+                        disabled={isLoading}
+                      >
+                        เข้าสู่ระบบเป็น {getRoleLabel(selectedRole)}
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="p-3 bg-muted rounded-lg text-sm">
+                    <p className="font-semibold mb-2">บัญชี Demo:</p>
+                    <ul className="space-y-1 text-muted-foreground">
+                      <li>• superadmin (Super Admin)</li>
+                      <li>• admin1 (Admin)</li>
+                      <li>• director1 (Director)</li>
+                      <li>• student1-12 (Student)</li>
+                      <li>• company1-8 (Company)</li>
+                    </ul>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      รหัสผ่าน: ใช้รหัสผ่านใดก็ได้ในโหมด Demo
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </form>
         </CardContent>
       </Card>
+      </div>
+      <Footer />
+
+      <DemoRoleSelector
+        open={showRoleSelector}
+        onOpenChange={closeRoleSelector}
+        onRoleSelected={() => {
+          closeRoleSelector();
+        }}
+      />
     </div>
   );
 }

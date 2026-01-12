@@ -2,11 +2,42 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
+// Helper function to check for demo mode session
+function getDemoSession(request: NextRequest): any | null {
+  const demoSessionCookie = request.cookies.get("demo_session");
+  if (!demoSessionCookie) return null;
+  
+  try {
+    const sessionData = JSON.parse(decodeURIComponent(demoSessionCookie.value));
+    // Validate session has required fields
+    if (sessionData && sessionData.id && sessionData.role) {
+      return sessionData;
+    }
+  } catch {
+    // Invalid cookie format
+    return null;
+  }
+  
+  return null;
+}
+
+// Helper function to check if demo mode is active
+function isDemoModeActive(request: NextRequest): boolean {
+  const demoModeCookie = request.cookies.get("demo_mode");
+  const demoParam = request.nextUrl.searchParams.get("demo");
+  return demoModeCookie?.value === "true" || demoParam === "true";
+}
+
 export async function middleware(request: NextRequest) {
   const token = await getToken({ 
     req: request,
     secret: process.env.NEXTAUTH_SECRET 
   });
+
+  // Check for demo mode session
+  const demoSession = getDemoSession(request);
+  const isDemoActive = isDemoModeActive(request);
+  const hasValidSession = token || (isDemoActive && demoSession);
 
   const { pathname } = request.nextUrl;
   const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/register");
@@ -24,20 +55,26 @@ export async function middleware(request: NextRequest) {
 
   // Handle auth pages
   if (isAuthPage) {
-    if (token) {
+    if (hasValidSession) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
     return NextResponse.next();
   }
 
   // Protect all other routes
-  if (!token) {
+  if (!hasValidSession) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
+    if (isDemoActive) {
+      loginUrl.searchParams.set("demo", "true");
+    }
     return NextResponse.redirect(loginUrl);
   }
 
   // Role-based route protection
+  // Use demo session role if in demo mode, otherwise use token role
+  const userRole = isDemoActive && demoSession ? demoSession.role : token?.role;
+  
   const isAdminRoute = pathname.startsWith("/users") || 
                       pathname.startsWith("/settings");
   const isDirectorRoute = pathname.startsWith("/reports");
@@ -45,19 +82,19 @@ export async function middleware(request: NextRequest) {
   const isCompanyRoute = pathname.startsWith("/company");
   const isAnnouncementRoute = pathname.startsWith("/announcements");
 
-  if (isSuperAdminRoute && token.role !== "super-admin") {
+  if (isSuperAdminRoute && userRole !== "super-admin") {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  if (isAdminRoute && token.role !== "admin" && token.role !== "super-admin") {
+  if (isAdminRoute && userRole !== "admin" && userRole !== "super-admin") {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  if (isDirectorRoute && token.role !== "director" && token.role !== "admin" && token.role !== "super-admin") {
+  if (isDirectorRoute && userRole !== "director" && userRole !== "admin" && userRole !== "super-admin") {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  if (isCompanyRoute && token.role !== "company") {
+  if (isCompanyRoute && userRole !== "company") {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 

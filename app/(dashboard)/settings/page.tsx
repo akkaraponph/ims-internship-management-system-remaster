@@ -6,13 +6,26 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useSession } from "next-auth/react";
 import { DemoModeToggle, DemoModeResetButton } from "@/components/demo/DemoModeToggle";
+import { DemoRoleSelector } from "@/components/demo/DemoRoleSelector";
 import { useDemoMode } from "@/lib/demo/demo-context";
+import { Badge } from "@/components/ui/badge";
 
 export default function SettingsPage() {
   const { data: session } = useSession();
-  const { isDemo } = useDemoMode();
+  const { isDemo, selectedRole, showRoleSelector, changeRole, closeRoleSelector } = useDemoMode();
   const isAdmin = session?.user?.role === "admin" || session?.user?.role === "super-admin";
   const isSuperAdmin = session?.user?.role === "super-admin";
+
+  const getRoleLabel = (role: string | null): string => {
+    const roleMap: Record<string, string> = {
+      "super-admin": "ผู้ดูแลระบบหลัก",
+      admin: "ผู้ดูแลระบบ",
+      director: "อาจารย์ที่ปรึกษา",
+      student: "นักศึกษา",
+      company: "บริษัท",
+    };
+    return roleMap[role || ""] || "";
+  };
 
   return (
     <div className="space-y-6">
@@ -112,7 +125,23 @@ export default function SettingsPage() {
               <DemoModeToggle />
             </div>
             {isDemo && (
-              <div className="pt-4 border-t">
+              <div className="pt-4 border-t space-y-4">
+                {selectedRole && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">บทบาทปัจจุบัน:</span>
+                      <Badge variant="secondary">{getRoleLabel(selectedRole)}</Badge>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={changeRole}
+                      className="w-full"
+                    >
+                      เปลี่ยนบทบาท
+                    </Button>
+                  </div>
+                )}
                 <DemoModeResetButton />
               </div>
             )}
@@ -140,6 +169,15 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       </div>
+
+      <DemoRoleSelector
+        open={showRoleSelector}
+        onOpenChange={closeRoleSelector}
+        onRoleSelected={() => {
+          closeRoleSelector();
+          window.location.reload();
+        }}
+      />
     </div>
   );
 }

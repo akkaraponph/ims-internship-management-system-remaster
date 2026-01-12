@@ -6,11 +6,11 @@ import { Menu, X, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { DemoModeToggle } from "@/components/demo/DemoModeToggle";
-import { useSession } from "next-auth/react";
+import { useDemoSession } from "@/hooks/use-demo-session";
 
 export function LandingNav() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { data: session } = useSession();
+  const { data: session } = useDemoSession();
 
   const navItems = [
     { label: "คุณสมบัติ", href: "#features" },
