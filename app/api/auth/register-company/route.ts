@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { users, companies, companyUsers, universities } from "@/lib/db/schema";
+import { users, companies, companyUsers, universities, roles } from "@/lib/db/schema";
 import { companyRegistrationSchema } from "@/lib/validations/company-registration";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -35,6 +35,19 @@ export async function POST(request: NextRequest) {
 
     if (existingUser.length > 0) {
       return NextResponse.json({ error: "Username already exists" }, { status: 400 });
+    }
+
+    // Validate customRoleId if provided
+    if (validatedData.customRoleId) {
+      const role = await db
+        .select()
+        .from(roles)
+        .where(eq(roles.id, validatedData.customRoleId))
+        .limit(1);
+
+      if (role.length === 0) {
+        return NextResponse.json({ error: "Invalid role ID" }, { status: 400 });
+      }
     }
 
     // Check if company already exists for this university
@@ -77,6 +90,7 @@ export async function POST(request: NextRequest) {
         password: hashedPassword,
         role: "company",
         universityId: university[0].id,
+        customRoleId: validatedData.customRoleId || null,
         isActive: true,
       })
       .returning();

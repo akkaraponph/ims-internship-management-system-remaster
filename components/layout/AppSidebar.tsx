@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { useDemoMode } from "@/lib/demo/demo-context";
-import { getSession, clearSession, clearSelectedRole, disableDemoMode } from "@/lib/demo/demo-service";
+import { getSession, clearDemoSessionOnly } from "@/lib/demo/demo-service";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -96,6 +96,7 @@ const companyMenuItems: MenuItem[] = [
   { title: "ตำแหน่งงาน", url: "/company/job-positions", icon: Briefcase },
   { title: "ผู้สมัคร", url: "/company/applications", icon: Users },
   { title: "นักศึกษาฝึกงาน", url: "/company/students", icon: GraduationCap },
+  { title: "จัดการผู้ใช้", url: "/company/users", icon: Users },
   { title: "ประกาศข่าวสาร", url: "/announcements", icon: Megaphone },
 ];
 
@@ -173,14 +174,12 @@ export function AppSidebar() {
   const user = currentSession?.user;
 
   const handleSignOut = () => {
-    // Always disable demo mode on logout
-    disableDemoMode();
-    
     if (isDemo) {
-      clearSession();
-      clearSelectedRole();
+      // Clear session but keep all demo data
+      clearDemoSessionOnly();
       window.location.href = "/login";
     } else {
+      // Regular logout - don't touch demo data
       signOut({ callbackUrl: "/login" });
     }
   };

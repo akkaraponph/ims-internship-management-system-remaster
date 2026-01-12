@@ -10,6 +10,7 @@ export const companyRegistrationSchema = z.object({
   contactPersonPhone: z.string().optional(),
   contactPersonPosition: z.string().optional(),
   position: z.string().optional(), // Position in company
+  customRoleId: z.string().uuid("Invalid role ID").optional(), // Custom role for company user
   isPrimary: z.boolean().default(true),
 });
 

@@ -1,4 +1,5 @@
-import type { University, User, Student, Company, Internship, JobPosition, Announcement, Notification, CompanyUser } from "@/types";
+import type { University, User, Student, Company, Internship, JobPosition, Announcement, Notification, CompanyUser, Role } from "@/types";
+import { companyRoles } from "@/lib/permissions/company-roles";
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -171,31 +172,97 @@ export function generateMockData() {
     updatedAt: new Date("2024-01-01"),
   }));
 
-  // Generate Company Users
+  // Generate Company Roles
+  const roles: Role[] = companyRoles.map((roleDef, index) => ({
+    id: generateId(),
+    name: roleDef.name,
+    description: roleDef.description,
+    permissions: roleDef.permissions,
+    isSystemRole: false,
+    createdAt: new Date("2024-01-01").toISOString() as any,
+    updatedAt: new Date("2024-01-01").toISOString() as any,
+  }));
+
+  const companyHRRoleId = roles.find((r) => r.name === "Company HR")!.id;
+  const companyManagerRoleId = roles.find((r) => r.name === "Company Manager")!.id;
+  const companyStaffRoleId = roles.find((r) => r.name === "Company Staff")!.id;
+
+  // Generate Company Users - Multiple users per company with different roles
   const companyUsers: CompanyUser[] = [];
   companies.forEach((company, index) => {
-    const companyUserAccount: User = {
+    // Primary user (Manager role)
+    const primaryUser: User = {
       id: generateId(),
       username: `company${index + 1}`,
       password: "$2a$10$dummy",
       role: "company",
       universityId: company.universityId,
-      customRoleId: null,
+      customRoleId: companyManagerRoleId,
       isActive: true,
       createdAt: new Date("2024-01-01").toISOString() as any,
       updatedAt: new Date("2024-01-01").toISOString() as any,
     };
-    users.push(companyUserAccount);
+    users.push(primaryUser);
 
     companyUsers.push({
       id: generateId(),
-      userId: companyUserAccount.id,
+      userId: primaryUser.id,
       companyId: company.id,
-      position: "HR Manager",
+      position: "Manager",
       isPrimary: true,
       createdAt: new Date("2024-01-01").toISOString() as any,
       updatedAt: new Date("2024-01-01").toISOString() as any,
     });
+
+    // HR user
+    const hrUser: User = {
+      id: generateId(),
+      username: `company${index + 1}_hr`,
+      password: "$2a$10$dummy",
+      role: "company",
+      universityId: company.universityId,
+      customRoleId: companyHRRoleId,
+      isActive: true,
+      createdAt: new Date("2024-01-01").toISOString() as any,
+      updatedAt: new Date("2024-01-01").toISOString() as any,
+    };
+    users.push(hrUser);
+
+    companyUsers.push({
+      id: generateId(),
+      userId: hrUser.id,
+      companyId: company.id,
+      position: "HR",
+      isPrimary: false,
+      createdAt: new Date("2024-01-01").toISOString() as any,
+      updatedAt: new Date("2024-01-01").toISOString() as any,
+    });
+
+    // Staff user (for some companies)
+    if (index % 2 === 0) {
+      const staffUser: User = {
+        id: generateId(),
+        username: `company${index + 1}_staff`,
+        password: "$2a$10$dummy",
+        role: "company",
+        universityId: company.universityId,
+        customRoleId: companyStaffRoleId,
+        isActive: true,
+        createdAt: new Date("2024-01-01").toISOString() as any,
+        updatedAt: new Date("2024-01-01").toISOString() as any,
+      };
+      users.push(staffUser);
+
+      companyUsers.push({
+        id: generateId(),
+        userId: staffUser.id,
+        companyId: company.id,
+        position: "Staff",
+        isPrimary: false,
+        createdAt: new Date("2024-01-01").toISOString() as any,
+        updatedAt: new Date("2024-01-01").toISOString() as any,
+      });
+    }
   });
 
   // Generate Job Positions
@@ -338,5 +405,6 @@ export function generateMockData() {
     announcements,
     notifications,
     companyUsers,
+    roles,
   };
 }

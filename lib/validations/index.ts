@@ -6,6 +6,7 @@ export * from "./address";
 export * from "./university";
 export * from "./registration";
 export * from "./company-registration";
+export * from "./company-user";
 export * from "./job-position";
 export * from "./email";
 export * from "./notification";

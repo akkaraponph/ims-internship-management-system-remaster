@@ -33,6 +33,9 @@ export function enableDemoMode(role?: UserRole): void {
     localStorage.setItem(DEMO_STORAGE_KEYS.ANNOUNCEMENTS, JSON.stringify(mockData.announcements));
     localStorage.setItem(DEMO_STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(mockData.notifications));
     localStorage.setItem(DEMO_STORAGE_KEYS.COMPANY_USERS, JSON.stringify(mockData.companyUsers));
+    if (mockData.roles) {
+      localStorage.setItem(DEMO_STORAGE_KEYS.ROLES, JSON.stringify(mockData.roles));
+    }
   }
 }
 
@@ -181,6 +184,28 @@ export function clearSession(): void {
   document.cookie = "demo_session=; path=/; max-age=0";
   // Dispatch custom event to notify session change
   window.dispatchEvent(new Event("demo-session-changed"));
+}
+
+export function clearDemoSessionOnly(): void {
+  if (typeof window === "undefined") return;
+  
+  // Clear session only
+  localStorage.removeItem(DEMO_STORAGE_KEYS.SESSION);
+  localStorage.removeItem(DEMO_STORAGE_KEYS.SELECTED_ROLE);
+  
+  // Clear session cookies
+  document.cookie = "demo_session=; path=/; max-age=0";
+  
+  // Clear demo_mode cookie (so middleware doesn't think demo is active)
+  document.cookie = "demo_mode=; path=/; max-age=0";
+  
+  // Clear demo mode flag in localStorage (so isDemoMode() returns false)
+  localStorage.removeItem(DEMO_STORAGE_KEYS.MODE);
+  
+  // Dispatch event for UI updates
+  window.dispatchEvent(new Event("demo-session-changed"));
+  
+  // Note: All demo data (users, students, companies, internships, etc.) is preserved
 }
 
 export function resetDemoData(): void {

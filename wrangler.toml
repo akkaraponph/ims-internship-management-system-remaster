@@ -1,0 +1,19 @@
+# Cloudflare Pages configuration
+# For more information, see: https://developers.cloudflare.com/pages/
+
+name = "ims-internship-management-system"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[env.production]
+name = "ims-internship-management-system"
+
+[env.preview]
+name = "ims-internship-management-system-preview"
+
+# Build configuration
+# Cloudflare Pages will use the build command from package.json
+# Build output directory is set in Cloudflare Pages dashboard
+
+# Note: Environment variables should be set in Cloudflare Pages dashboard
+# For local development, use .dev.vars file

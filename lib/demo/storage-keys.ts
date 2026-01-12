@@ -11,6 +11,7 @@ export const DEMO_STORAGE_KEYS = {
   SESSION: "demo_session",
   COMPANY_USERS: "demo_companyUsers",
   SELECTED_ROLE: "demo_selectedRole",
+  ROLES: "demo_roles",
 } as const;
 
 export type DemoStorageKey = typeof DEMO_STORAGE_KEYS[keyof typeof DEMO_STORAGE_KEYS];

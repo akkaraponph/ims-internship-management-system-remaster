@@ -31,8 +31,9 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, Users } from "lucide-react";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 
 interface Company {
   id: string;
@@ -483,6 +484,11 @@ export default function CompaniesPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        <Link href={`/companies/${company.id}/users`}>
+                          <Button variant="outline" size="sm" title="จัดการผู้ใช้">
+                            <Users className="h-4 w-4" />
+                          </Button>
+                        </Link>
                         <Button
                           variant="outline"
                           size="sm"
