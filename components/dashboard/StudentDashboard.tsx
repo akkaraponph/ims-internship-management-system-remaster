@@ -19,13 +19,10 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { useSession } from "next-auth/react";
 import { AnnouncementBanner } from "@/components/announcements/AnnouncementBanner";
-
-const profileCompletion = {
-  personal: false,
-  academic: false,
-  address: false,
-  resume: false,
-};
+import { useState, useEffect } from "react";
+import { calculateProfileCompletion, getProfileCompletionPercentage } from "@/lib/utils/profile-completion";
+import type { Student } from "@/types";
+import { Loader2 } from "lucide-react";
 
 const todoItems = [
   { id: 1, title: "กรอกข้อมูลที่อยู่ปัจจุบัน", completed: false, priority: "high" },
@@ -37,10 +34,42 @@ const todoItems = [
 export function StudentDashboard() {
   const { data: session } = useSession();
   const user = session?.user;
+  const [student, setStudent] = useState<Student | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const completedItems = Object.values(profileCompletion).filter(Boolean).length;
-  const totalItems = Object.values(profileCompletion).length;
-  const completionPercentage = (completedItems / totalItems) * 100;
+  useEffect(() => {
+    if (session?.user?.role === "student") {
+      fetchStudent();
+    }
+  }, [session]);
+
+  const fetchStudent = async () => {
+    try {
+      const response = await fetch("/api/students");
+      if (response.ok) {
+        const data = await response.json();
+        const studentData = Array.isArray(data) ? data[0] : data;
+        if (studentData) {
+          setStudent(studentData);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching student:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const profileCompletion = calculateProfileCompletion(student);
+  const completionPercentage = getProfileCompletionPercentage(profileCompletion);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -100,13 +129,19 @@ export function StudentDashboard() {
                 <Building2 className="h-5 w-5 text-primary" />
                 ข้อมูลการฝึกงาน
               </CardTitle>
-              <Badge variant="secondary">ยังไม่มีการฝึกงาน</Badge>
+              {student && (
+                <Badge variant="secondary">
+                  {student.isCoInternship ? "โคออป" : "สหกิจ"}
+                </Badge>
+              )}
             </div>
             <CardDescription>รายละเอียดสถานประกอบการที่ฝึกงาน</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-center text-muted-foreground py-8">
-              ยังไม่มีข้อมูลการฝึกงาน
+              <Button variant="outline" asChild>
+                <a href="/internship">ดูข้อมูลการฝึกงาน</a>
+              </Button>
             </div>
           </CardContent>
         </Card>
