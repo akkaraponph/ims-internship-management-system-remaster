@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { internships, students, companyUsers, users } from "@/lib/db/schema";
 import { createInternshipSchema } from "@/lib/validations";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, and, or } from "drizzle-orm";
 import { createNotification } from "@/lib/notifications/notification-service";
 
 export async function GET(request: NextRequest) {
@@ -12,6 +12,11 @@ export async function GET(request: NextRequest) {
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get("status");
+    const isSend = searchParams.get("isSend");
+    const isConfirm = searchParams.get("isConfirm");
 
     // Students can only see their own internships
     if (session.user.role === "student") {
@@ -25,27 +30,61 @@ export async function GET(request: NextRequest) {
         return NextResponse.json([]);
       }
 
+      const conditions = [eq(internships.studentId, studentRecords[0].id)];
+      if (isSend !== null) {
+        conditions.push(eq(internships.isSend, isSend));
+      }
+      if (isConfirm !== null) {
+        conditions.push(eq(internships.isConfirm, isConfirm));
+      }
+      if (status) {
+        conditions.push(eq(internships.status, status));
+      }
+
       const studentInternships = await db
         .select()
         .from(internships)
-        .where(eq(internships.studentId, studentRecords[0].id));
-
+        .where(and(...conditions));
       return NextResponse.json(studentInternships);
     }
 
     // Companies can see internships for their company
     if (session.user.role === "company" && session.user.companyId) {
+      const conditions = [eq(internships.companyId, session.user.companyId)];
+      if (isSend !== null) {
+        conditions.push(eq(internships.isSend, isSend));
+      }
+      if (isConfirm !== null) {
+        conditions.push(eq(internships.isConfirm, isConfirm));
+      }
+      if (status) {
+        conditions.push(eq(internships.status, status));
+      }
+
       const companyInternships = await db
         .select()
         .from(internships)
-        .where(eq(internships.companyId, session.user.companyId));
-
+        .where(and(...conditions));
       return NextResponse.json(companyInternships);
     }
 
     // Super-admin can see all internships
     if (session.user.role === "super-admin") {
-      const allInternships = await db.select().from(internships);
+      const conditions = [];
+      if (isSend !== null) {
+        conditions.push(eq(internships.isSend, isSend));
+      }
+      if (isConfirm !== null) {
+        conditions.push(eq(internships.isConfirm, isConfirm));
+      }
+      if (status) {
+        conditions.push(eq(internships.status, status));
+      }
+
+      const allInternships = await db
+        .select()
+        .from(internships)
+        .where(conditions.length > 0 ? and(...conditions) : undefined);
       return NextResponse.json(allInternships);
     }
 
@@ -64,11 +103,21 @@ export async function GET(request: NextRequest) {
       }
 
       // Get internships for these students
+      const conditions = [inArray(internships.studentId, studentIds)];
+      if (isSend !== null) {
+        conditions.push(eq(internships.isSend, isSend));
+      }
+      if (isConfirm !== null) {
+        conditions.push(eq(internships.isConfirm, isConfirm));
+      }
+      if (status) {
+        conditions.push(eq(internships.status, status));
+      }
+
       const universityInternships = await db
         .select()
         .from(internships)
-        .where(inArray(internships.studentId, studentIds));
-      
+        .where(and(...conditions));
       return NextResponse.json(universityInternships);
     }
 

@@ -7,10 +7,13 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
+  ArrowRight,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { AnnouncementBanner } from "@/components/announcements/AnnouncementBanner";
+import Link from "next/link";
 
 export function DirectorDashboard() {
   return (
@@ -40,6 +43,11 @@ export function DirectorDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">0</div>
+            <Link href="/director/internships/pending">
+              <Button variant="link" className="p-0 h-auto mt-2">
+                ดูรายการ <ArrowRight className="ml-1 h-3 w-3" />
+              </Button>
+            </Link>
           </CardContent>
         </Card>
 
@@ -50,6 +58,11 @@ export function DirectorDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">0</div>
+            <Link href="/director/internships/confirmed">
+              <Button variant="link" className="p-0 h-auto mt-2">
+                ดูรายการ <ArrowRight className="ml-1 h-3 w-3" />
+              </Button>
+            </Link>
           </CardContent>
         </Card>
       </div>

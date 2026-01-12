@@ -191,7 +191,36 @@ export const internships = pgTable("internships", {
 export const coInternships = pgTable("co_internships", {
   id: uuid("id").primaryKey().defaultRandom(),
   internshipId: uuid("internship_id").references(() => internships.id).notNull(),
+  studentId: uuid("student_id").references(() => students.id), // Optional - may not be registered
+  firstName: varchar("first_name", { length: 255 }), // For non-registered students
+  lastName: varchar("last_name", { length: 255 }), // For non-registered students
+  studentIdString: varchar("student_id_string", { length: 50 }), // Student ID as string for non-registered
+  phone: varchar("phone", { length: 20 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Educations table (education history for students)
+export const educations = pgTable("educations", {
+  id: uuid("id").primaryKey().defaultRandom(),
   studentId: uuid("student_id").references(() => students.id).notNull(),
+  level: varchar("level", { length: 255 }), // e.g., "มัธยมศึกษาตอนต้น", "มัธยมศึกษาตอนปลาย", "ปริญญาตรี"
+  academy: varchar("academy", { length: 255 }), // School/University name
+  gpa: decimal("gpa", { precision: 4, scale: 2 }), // GPA for this level
+  order: integer("order").default(1), // Order of education (1, 2, 3)
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Contact Persons table (emergency contact for students)
+export const contactPersons = pgTable("contact_persons", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  studentId: uuid("student_id").references(() => students.id).notNull().unique(),
+  firstName: varchar("first_name", { length: 255 }).notNull(),
+  lastName: varchar("last_name", { length: 255 }).notNull(),
+  relationship: varchar("relationship", { length: 100 }), // e.g., "ผู้ปกครอง", "พ่อ", "แม่"
+  phone: varchar("phone", { length: 20 }),
+  addressId: uuid("address_id").references(() => addresses.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -242,6 +271,11 @@ export const studentsRelations = relations(students, ({ one, many }) => ({
   }),
   internships: many(internships),
   coInternships: many(coInternships),
+  educations: many(educations),
+  contactPerson: one(contactPersons, {
+    fields: [students.id],
+    references: [contactPersons.studentId],
+  }),
 }));
 
 export const directorsRelations = relations(directors, ({ one }) => ({
@@ -315,6 +349,24 @@ export const coInternshipsRelations = relations(coInternships, ({ one }) => ({
   }),
 }));
 
+export const educationsRelations = relations(educations, ({ one }) => ({
+  student: one(students, {
+    fields: [educations.studentId],
+    references: [students.id],
+  }),
+}));
+
+export const contactPersonsRelations = relations(contactPersons, ({ one }) => ({
+  student: one(students, {
+    fields: [contactPersons.studentId],
+    references: [students.id],
+  }),
+  address: one(addresses, {
+    fields: [contactPersons.addressId],
+    references: [addresses.id],
+  }),
+}));
+
 export const provincesRelations = relations(provinces, ({ many }) => ({
   districts: many(districts),
 }));
@@ -349,6 +401,7 @@ export const addressesRelations = relations(addresses, ({ one, many }) => ({
   }),
   students: many(students),
   companies: many(companies),
+  contactPersons: many(contactPersons),
 }));
 
 // Email Templates table

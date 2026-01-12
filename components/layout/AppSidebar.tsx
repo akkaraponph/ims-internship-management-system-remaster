@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { useDemoMode } from "@/lib/demo/demo-context";
-import { getSession, clearSession } from "@/lib/demo/demo-service";
+import { getSession, clearSession, clearSelectedRole } from "@/lib/demo/demo-service";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -110,7 +110,26 @@ export function AppSidebar() {
     if (isDemo) {
       const sessionData = getSession();
       setDemoSession(sessionData);
+    } else {
+      setDemoSession(null);
     }
+  }, [isDemo]);
+
+  // Listen for session changes (e.g., when logout clears session)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleSessionChange = () => {
+      if (isDemo) {
+        const sessionData = getSession();
+        setDemoSession(sessionData);
+      }
+    };
+
+    window.addEventListener("demo-session-changed", handleSessionChange);
+    return () => {
+      window.removeEventListener("demo-session-changed", handleSessionChange);
+    };
   }, [isDemo]);
 
   const currentSession = isDemo ? { user: demoSession } : session;
@@ -155,6 +174,7 @@ export function AppSidebar() {
   const handleSignOut = () => {
     if (isDemo) {
       clearSession();
+      clearSelectedRole();
       window.location.href = "/login?demo=true";
     } else {
       signOut({ callbackUrl: "/login" });
@@ -164,7 +184,7 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex items-center gap-3 px-2 py-3">
+        <Link href="/" className="flex items-center gap-3 px-2 py-3 hover:opacity-80 transition-opacity">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <GraduationCap className="h-6 w-6" />
           </div>
@@ -178,7 +198,7 @@ export function AppSidebar() {
               </span>
             </div>
           )}
-        </div>
+        </Link>
       </SidebarHeader>
 
       <SidebarContent>

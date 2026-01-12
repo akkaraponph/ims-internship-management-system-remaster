@@ -89,6 +89,7 @@ export default function ProfilePage() {
   const [permanentAddress, setPermanentAddress] = useState<Address | null>(null);
 
   const [formData, setFormData] = useState({
+    idCard: "",
     email: "",
     firstName: "",
     lastName: "",
@@ -108,6 +109,33 @@ export default function ProfilePage() {
     motherJob: "",
     isCoInternship: false,
   });
+
+  const [educations, setEducations] = useState([
+    { level: "", academy: "", gpa: "", order: 1 },
+    { level: "", academy: "", gpa: "", order: 2 },
+    { level: "", academy: "", gpa: "", order: 3 },
+  ]);
+
+  const [contactPerson, setContactPerson] = useState({
+    firstName: "",
+    lastName: "",
+    relationship: "",
+    phone: "",
+    addressId: "",
+  });
+
+  const [contactPersonAddress, setContactPersonAddress] = useState({
+    addressLine: "",
+    provinceId: "",
+    districtId: "",
+    subDistrictId: "",
+    postalCode: "",
+  });
+
+  const [contactPersonDistricts, setContactPersonDistricts] = useState<District[]>([]);
+  const [contactPersonSubDistricts, setContactPersonSubDistricts] = useState<SubDistrict[]>([]);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const [presentAddressData, setPresentAddressData] = useState({
     addressLine: "",
@@ -141,6 +169,7 @@ export default function ProfilePage() {
         if (studentData) {
           setStudent(studentData);
           setFormData({
+            idCard: studentData.idCard || "",
             email: studentData.email || "",
             firstName: studentData.firstName || "",
             lastName: studentData.lastName || "",
@@ -162,6 +191,43 @@ export default function ProfilePage() {
             motherJob: studentData.motherJob || "",
             isCoInternship: studentData.isCoInternship || false,
           });
+
+          if (studentData.image) {
+            setImagePreview(studentData.image);
+          }
+
+          // Fetch educations
+          const educationsResponse = await fetch(`/api/students/${studentData.id}/educations`);
+          if (educationsResponse.ok) {
+            const educationsData = await educationsResponse.json();
+            if (Array.isArray(educationsData) && educationsData.length > 0) {
+              const sortedEducations = educationsData.sort((a: any, b: any) => a.order - b.order);
+              const educationArray = [
+                sortedEducations[0] || { level: "", academy: "", gpa: "", order: 1 },
+                sortedEducations[1] || { level: "", academy: "", gpa: "", order: 2 },
+                sortedEducations[2] || { level: "", academy: "", gpa: "", order: 3 },
+              ];
+              setEducations(educationArray);
+            }
+          }
+
+          // Fetch contact person
+          const contactResponse = await fetch(`/api/students/${studentData.id}/contact-person`);
+          if (contactResponse.ok) {
+            const contactData = await contactResponse.json();
+            if (contactData) {
+              setContactPerson({
+                firstName: contactData.firstName || "",
+                lastName: contactData.lastName || "",
+                relationship: contactData.relationship || "",
+                phone: contactData.phone || "",
+                addressId: contactData.addressId || "",
+              });
+              if (contactData.addressId) {
+                fetchContactPersonAddress(contactData.addressId);
+              }
+            }
+          }
 
           if (studentData.presentAddressId) {
             fetchAddress(studentData.presentAddressId, "present");
@@ -420,6 +486,157 @@ export default function ProfilePage() {
     return true;
   };
 
+  const fetchContactPersonAddress = async (addressId: string) => {
+    try {
+      const response = await fetch(`/api/addresses/${addressId}`);
+      if (response.ok) {
+        const address = await response.json();
+        setContactPersonAddress({
+          addressLine: address.addressLine || "",
+          provinceId: address.provinceId || "",
+          districtId: address.districtId || "",
+          subDistrictId: address.subDistrictId || "",
+          postalCode: address.postalCode || "",
+        });
+        if (address.provinceId) {
+          const districtsResponse = await fetch(`/api/addresses/districts?provinceId=${address.provinceId}`);
+          if (districtsResponse.ok) {
+            setContactPersonDistricts(await districtsResponse.json());
+          }
+        }
+        if (address.districtId) {
+          const subDistrictsResponse = await fetch(`/api/addresses/sub-districts?districtId=${address.districtId}`);
+          if (subDistrictsResponse.ok) {
+            setContactPersonSubDistricts(await subDistrictsResponse.json());
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching contact person address:", error);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("กรุณาเลือกไฟล์รูปภาพ");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("ขนาดไฟล์ต้องไม่เกิน 2MB");
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/upload/image", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setImagePreview(data.imageUrl);
+        toast.success("อัปโหลดรูปภาพสำเร็จ");
+        await fetchStudent();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || "เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ");
+      }
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      toast.error("เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleSaveEducations = async () => {
+    if (!student) return;
+
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/students/${student.id}/educations`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ educations }),
+      });
+
+      if (response.ok) {
+        toast.success("บันทึกประวัติการศึกษาสำเร็จ");
+        await fetchStudent();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || "เกิดข้อผิดพลาด");
+      }
+    } catch (error) {
+      console.error("Error saving educations:", error);
+      toast.error("เกิดข้อผิดพลาดในการบันทึกประวัติการศึกษา");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveContactPerson = async () => {
+    if (!student) return;
+
+    setIsSaving(true);
+    try {
+      // Save contact person address first
+      let addressId = contactPerson.addressId;
+      if (contactPersonAddress.provinceId || contactPersonAddress.districtId) {
+        if (addressId) {
+          const addressResponse = await fetch(`/api/addresses/${addressId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(contactPersonAddress),
+          });
+          if (!addressResponse.ok) {
+            throw new Error("Failed to update address");
+          }
+        } else {
+          const addressResponse = await fetch("/api/addresses", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(contactPersonAddress),
+          });
+          if (addressResponse.ok) {
+            const newAddress = await addressResponse.json();
+            addressId = newAddress.id;
+          } else {
+            throw new Error("Failed to create address");
+          }
+        }
+      }
+
+      // Save contact person
+      const response = await fetch(`/api/students/${student.id}/contact-person`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...contactPerson, addressId }),
+      });
+
+      if (response.ok) {
+        toast.success("บันทึกข้อมูลผู้ติดต่อสำเร็จ");
+        await fetchStudent();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || "เกิดข้อผิดพลาด");
+      }
+    } catch (error: any) {
+      console.error("Error saving contact person:", error);
+      toast.error(error.message || "เกิดข้อผิดพลาดในการบันทึกข้อมูลผู้ติดต่อ");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!student) return;
 
@@ -430,6 +647,7 @@ export default function ProfilePage() {
     setIsSaving(true);
     try {
       const payload: any = {
+        idCard: formData.idCard?.trim() || undefined,
         email: formData.email.trim(),
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
@@ -510,6 +728,35 @@ export default function ProfilePage() {
               <CardDescription>ข้อมูลพื้นฐานของคุณ</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Image Upload */}
+              <div className="space-y-2">
+                <Label>รูปภาพ</Label>
+                <div className="flex items-center gap-4">
+                  {imagePreview && (
+                    <img
+                      src={imagePreview}
+                      alt="Profile"
+                      className="w-32 h-40 object-cover rounded border"
+                    />
+                  )}
+                  <div className="space-y-2">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={uploadingImage}
+                      className="cursor-pointer"
+                    />
+                    {uploadingImage && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        กำลังอัปโหลด...
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">ชื่อ *</Label>
@@ -530,6 +777,15 @@ export default function ProfilePage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
+                  <Label htmlFor="idCard">รหัสประจำตัวประชาชน *</Label>
+                  <Input
+                    id="idCard"
+                    value={formData.idCard}
+                    onChange={(e) => setFormData({ ...formData, idCard: e.target.value })}
+                    maxLength={13}
+                  />
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="email">อีเมล *</Label>
                   <Input
                     id="email"
@@ -538,6 +794,8 @@ export default function ProfilePage() {
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   />
                 </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="phone">เบอร์โทรศัพท์</Label>
                   <Input
@@ -546,8 +804,6 @@ export default function ProfilePage() {
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   />
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="dateOfBirth">วันเกิด</Label>
                   <Input
@@ -557,6 +813,8 @@ export default function ProfilePage() {
                     onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
                   />
                 </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="religion">ศาสนา</Label>
                   <Input
@@ -950,6 +1208,278 @@ export default function ProfilePage() {
                   <>
                     <Save className="mr-2 h-4 w-4" />
                     บันทึกที่อยู่ถาวร
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Education History Section */}
+        <div>
+          <Card>
+            <CardHeader>
+              <CardTitle>ประวัติการศึกษา</CardTitle>
+              <CardDescription>ประวัติการศึกษาของคุณ (สูงสุด 3 ระดับ)</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {educations.map((education, index) => (
+                <div key={index} className="space-y-4 p-4 border rounded-lg">
+                  <h4 className="font-medium">ระดับการศึกษา {index + 1}</h4>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor={`education-${index}-level`}>ระดับการศึกษา</Label>
+                      <Input
+                        id={`education-${index}-level`}
+                        value={education.level}
+                        onChange={(e) => {
+                          const newEducations = [...educations];
+                          newEducations[index].level = e.target.value;
+                          setEducations(newEducations);
+                        }}
+                        placeholder="เช่น มัธยมศึกษาตอนต้น"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`education-${index}-academy`}>ชื่อสถานศึกษา</Label>
+                      <Input
+                        id={`education-${index}-academy`}
+                        value={education.academy}
+                        onChange={(e) => {
+                          const newEducations = [...educations];
+                          newEducations[index].academy = e.target.value;
+                          setEducations(newEducations);
+                        }}
+                        placeholder="เช่น โรงเรียน..."
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`education-${index}-gpa`}>เกรดเฉลี่ย</Label>
+                      <Input
+                        id={`education-${index}-gpa`}
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="4"
+                        value={education.gpa}
+                        onChange={(e) => {
+                          const newEducations = [...educations];
+                          newEducations[index].gpa = e.target.value;
+                          setEducations(newEducations);
+                        }}
+                        placeholder="เช่น 3.50"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <Button onClick={handleSaveEducations} disabled={isSaving}>
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    กำลังบันทึก...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    บันทึกประวัติการศึกษา
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Contact Person Section */}
+        <div>
+          <Card>
+            <CardHeader>
+              <CardTitle>บุคคลที่สามารถติดต่อได้</CardTitle>
+              <CardDescription>ข้อมูลผู้ติดต่อฉุกเฉิน</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="contactFirstName">ชื่อ *</Label>
+                  <Input
+                    id="contactFirstName"
+                    value={contactPerson.firstName}
+                    onChange={(e) =>
+                      setContactPerson({ ...contactPerson, firstName: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contactLastName">นามสกุล *</Label>
+                  <Input
+                    id="contactLastName"
+                    value={contactPerson.lastName}
+                    onChange={(e) =>
+                      setContactPerson({ ...contactPerson, lastName: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contactRelationship">ความสัมพันธ์</Label>
+                  <Input
+                    id="contactRelationship"
+                    value={contactPerson.relationship}
+                    onChange={(e) =>
+                      setContactPerson({ ...contactPerson, relationship: e.target.value })
+                    }
+                    placeholder="เช่น ผู้ปกครอง"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="contactPhone">เบอร์โทรศัพท์</Label>
+                  <Input
+                    id="contactPhone"
+                    value={contactPerson.phone}
+                    onChange={(e) =>
+                      setContactPerson({ ...contactPerson, phone: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>ที่อยู่ผู้ติดต่อ</Label>
+                <div className="space-y-4 p-4 border rounded-lg">
+                  <div className="space-y-2">
+                    <Label htmlFor="contact-addressLine">ที่อยู่</Label>
+                    <Textarea
+                      id="contact-addressLine"
+                      value={contactPersonAddress.addressLine}
+                      onChange={(e) =>
+                        setContactPersonAddress({
+                          ...contactPersonAddress,
+                          addressLine: e.target.value,
+                        })
+                      }
+                      rows={3}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="contact-province">จังหวัด</Label>
+                      <Select
+                        value={contactPersonAddress.provinceId}
+                        onValueChange={async (value) => {
+                          setContactPersonAddress({
+                            ...contactPersonAddress,
+                            provinceId: value,
+                            districtId: "",
+                            subDistrictId: "",
+                          });
+                          setContactPersonDistricts([]);
+                          setContactPersonSubDistricts([]);
+                          if (value) {
+                            const response = await fetch(`/api/addresses/districts?provinceId=${value}`);
+                            if (response.ok) {
+                              setContactPersonDistricts(await response.json());
+                            }
+                          }
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="เลือกจังหวัด" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {provinces.map((province) => (
+                            <SelectItem key={province.id} value={province.id}>
+                              {province.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="contact-district">อำเภอ</Label>
+                      <Select
+                        value={contactPersonAddress.districtId}
+                        onValueChange={async (value) => {
+                          setContactPersonAddress({
+                            ...contactPersonAddress,
+                            districtId: value,
+                            subDistrictId: "",
+                          });
+                          setContactPersonSubDistricts([]);
+                          if (value) {
+                            const response = await fetch(`/api/addresses/sub-districts?districtId=${value}`);
+                            if (response.ok) {
+                              setContactPersonSubDistricts(await response.json());
+                            }
+                          }
+                        }}
+                        disabled={!contactPersonAddress.provinceId}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="เลือกอำเภอ" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {contactPersonDistricts.map((district) => (
+                            <SelectItem key={district.id} value={district.id}>
+                              {district.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="contact-subDistrict">ตำบล</Label>
+                      <Select
+                        value={contactPersonAddress.subDistrictId}
+                        onValueChange={(value) =>
+                          setContactPersonAddress({
+                            ...contactPersonAddress,
+                            subDistrictId: value,
+                          })
+                        }
+                        disabled={!contactPersonAddress.districtId}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="เลือกตำบล" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {contactPersonSubDistricts.map((subDistrict) => (
+                            <SelectItem key={subDistrict.id} value={subDistrict.id}>
+                              {subDistrict.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="contact-postalCode">รหัสไปรษณีย์</Label>
+                      <Input
+                        id="contact-postalCode"
+                        value={contactPersonAddress.postalCode}
+                        onChange={(e) =>
+                          setContactPersonAddress({
+                            ...contactPersonAddress,
+                            postalCode: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <Button onClick={handleSaveContactPerson} disabled={isSaving}>
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    กำลังบันทึก...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    บันทึกข้อมูลผู้ติดต่อ
                   </>
                 )}
               </Button>

@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
-import { Loader2, Calendar, Building2, User, Clock, CheckCircle, XCircle } from "lucide-react";
+import { Loader2, Calendar, Building2, User, Clock, CheckCircle, XCircle, Plus } from "lucide-react";
+import Link from "next/link";
 
 interface Internship {
   id: string;
@@ -116,9 +117,17 @@ export default function StudentInternshipPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">การฝึกงาน</h2>
-        <p className="text-muted-foreground">ดูข้อมูลการฝึกงานของคุณ</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">การฝึกงาน</h2>
+          <p className="text-muted-foreground">ดูข้อมูลการฝึกงานของคุณ</p>
+        </div>
+        <Link href="/internship/create">
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            สร้างแบบฟอร์มใหม่
+          </Button>
+        </Link>
       </div>
 
       {internships.length === 0 ? (

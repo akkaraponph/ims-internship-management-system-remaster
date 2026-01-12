@@ -1,5 +1,20 @@
 import { z } from "zod";
 
+export const educationSchema = z.object({
+  level: z.string().optional(),
+  academy: z.string().optional(),
+  gpa: z.string().regex(/^\d+(\.\d{1,2})?$/, "Invalid GPA format").optional(),
+  order: z.number().int().min(1).max(3).optional(),
+});
+
+export const contactPersonSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  relationship: z.string().optional(),
+  phone: z.string().optional(),
+  addressId: z.string().uuid().optional(),
+});
+
 export const createStudentSchema = z.object({
   email: z.string().email("Invalid email address"),
   idCard: z.string().min(1, "ID card is required"),
@@ -24,6 +39,8 @@ export const createStudentSchema = z.object({
   presentAddressId: z.string().uuid().optional(),
   permanentAddressId: z.string().uuid().optional(),
   userId: z.string().uuid().optional(),
+  educations: z.array(educationSchema).optional(),
+  contactPerson: contactPersonSchema.optional(),
 });
 
 export const updateStudentSchema = createStudentSchema.partial();
