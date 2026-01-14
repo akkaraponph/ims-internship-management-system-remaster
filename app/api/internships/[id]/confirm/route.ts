@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { internships, students } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { createNotification } from "@/lib/notifications/notification-service";
+import { getWorkflowInstanceByResource } from "@/lib/workflows/workflow.service";
 
 export async function POST(
   request: NextRequest,
@@ -38,6 +39,15 @@ export async function POST(
     }
 
     const internship = internshipRecords[0];
+
+    // Check workflow status - workflow must be fully approved
+    const workflowInstance = await getWorkflowInstanceByResource("internship", id);
+    if (workflowInstance && workflowInstance.status !== "approved") {
+      return NextResponse.json(
+        { error: "Internship workflow must be fully approved before confirmation" },
+        { status: 400 }
+      );
+    }
 
     // Update internship to confirm
     await db

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { internships, students, companyUsers, users } from "@/lib/db/schema";
+import { internships, students, companyUsers, users, workflows } from "@/lib/db/schema";
 import { createInternshipSchema } from "@/lib/validations";
 import { eq, inArray, and, or, sql } from "drizzle-orm";
 import { createNotification } from "@/lib/notifications/notification-service";
+import { createWorkflowInstance } from "@/lib/workflows/workflow.service";
 
 export async function GET(request: NextRequest) {
   try {
@@ -195,6 +196,33 @@ export async function POST(request: NextRequest) {
     }
 
     const newInternship = await db.insert(internships).values(validatedData).returning();
+
+    // Create workflow instance for internship
+    try {
+      // Get internship workflow
+      const internshipWorkflows = await db
+        .select()
+        .from(workflows)
+        .where(
+          and(
+            eq(workflows.type, "internship"),
+            eq(workflows.status, "active")
+          )
+        )
+        .limit(1);
+
+      if (internshipWorkflows.length > 0) {
+        await createWorkflowInstance({
+          workflowId: internshipWorkflows[0].id,
+          resourceType: "internship",
+          resourceId: newInternship[0].id,
+          createdBy: session.user.id,
+        });
+      }
+    } catch (error) {
+      console.error("Error creating workflow instance:", error);
+      // Don't fail the request if workflow creation fails
+    }
 
     // Send notification to company users when student applies
     if (validatedData.companyId) {

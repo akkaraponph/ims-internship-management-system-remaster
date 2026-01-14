@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { students } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { students, workflows } from "@/lib/db/schema";
+import { eq, and } from "drizzle-orm";
 import { writeFile, mkdir, unlink } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
+import { createWorkflowInstance } from "@/lib/workflows/workflow.service";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
@@ -97,6 +98,33 @@ export async function POST(request: NextRequest) {
         updatedAt: new Date(),
       })
       .where(eq(students.id, student.id));
+
+    // Create workflow instance for resume approval
+    try {
+      // Get resume workflow
+      const resumeWorkflows = await db
+        .select()
+        .from(workflows)
+        .where(
+          and(
+            eq(workflows.type, "resume"),
+            eq(workflows.status, "active")
+          )
+        )
+        .limit(1);
+
+      if (resumeWorkflows.length > 0) {
+        await createWorkflowInstance({
+          workflowId: resumeWorkflows[0].id,
+          resourceType: "resume",
+          resourceId: student.id,
+          createdBy: session.user.id,
+        });
+      }
+    } catch (error) {
+      console.error("Error creating workflow instance:", error);
+      // Don't fail the request if workflow creation fails
+    }
 
     // Return file URL
 

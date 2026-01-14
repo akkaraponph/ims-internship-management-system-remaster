@@ -17,6 +17,12 @@ import type {
   backups,
   jobPositions,
   companyUsers,
+  workflows,
+  workflowSteps,
+  workflowStepResponsibilities,
+  workflowInstances,
+  workflowApprovals,
+  workflowApprovalHistory,
 } from "@/lib/db/schema";
 
 export type User = typeof users.$inferSelect;
@@ -37,12 +43,25 @@ export type RolePermission = typeof rolePermissions.$inferSelect;
 export type Backup = typeof backups.$inferSelect;
 export type JobPosition = typeof jobPositions.$inferSelect;
 export type CompanyUser = typeof companyUsers.$inferSelect;
+export type Workflow = typeof workflows.$inferSelect;
+export type WorkflowStep = typeof workflowSteps.$inferSelect;
+export type WorkflowStepResponsibility = typeof workflowStepResponsibilities.$inferSelect;
+export type WorkflowInstance = typeof workflowInstances.$inferSelect;
+export type WorkflowApproval = typeof workflowApprovals.$inferSelect;
+export type WorkflowApprovalHistory = typeof workflowApprovalHistory.$inferSelect;
 
 export type UserRole = "admin" | "director" | "student" | "super-admin" | "company";
 export type AnnouncementType = "info" | "warning" | "success" | "error";
 export type AnnouncementPriority = "low" | "medium" | "high";
 export type NotificationType = "system" | "internship" | "student" | "company" | "announcement";
 export type BackupType = "full" | "partial";
+export type WorkflowType = "internship" | "resume";
+export type WorkflowStatus = "active" | "inactive";
+export type WorkflowInstanceStatus = "pending" | "in_progress" | "approved" | "rejected" | "cancelled";
+export type WorkflowFlowType = "sequential" | "parallel";
+export type WorkflowResponsibilityType = "role" | "user" | "director";
+export type ApprovalStatus = "pending" | "approved" | "rejected";
+export type ApprovalAction = "created" | "approved" | "rejected" | "commented" | "cancelled";
 
 export interface SessionUser {
   id: string;

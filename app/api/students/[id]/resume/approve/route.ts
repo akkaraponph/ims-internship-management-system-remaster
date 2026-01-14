@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { students, directors } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { students, directors, workflows } from "@/lib/db/schema";
+import { eq, and } from "drizzle-orm";
 import { createNotification } from "@/lib/notifications/notification-service";
+import { getWorkflowInstanceByResource, createWorkflowInstance } from "@/lib/workflows/workflow.service";
+import { getPendingApprovalsForUser, approve as approveWorkflow } from "@/lib/workflows/approval.service";
 
 export async function POST(
   request: NextRequest,
@@ -51,21 +53,106 @@ export async function POST(
       return NextResponse.json({ error: "Student has no resume to approve" }, { status: 400 });
     }
 
-    // Get director ID if the user is a director
-    let directorId: string | null = null;
-    if (session.user.role === "director") {
-      const directorRecords = await db
-        .select({ id: directors.id })
-        .from(directors)
-        .where(eq(directors.userId, session.user.id))
+    // Get or create workflow instance
+    let workflowInstance = await getWorkflowInstanceByResource("resume", id);
+    
+    if (!workflowInstance) {
+      // Get resume workflow
+      const resumeWorkflows = await db
+        .select()
+        .from(workflows)
+        .where(
+          and(
+            eq(workflows.type, "resume"),
+            eq(workflows.status, "active")
+          )
+        )
         .limit(1);
-      
-      if (directorRecords.length > 0) {
-        directorId = directorRecords[0].id;
+
+      if (resumeWorkflows.length > 0) {
+        workflowInstance = await createWorkflowInstance({
+          workflowId: resumeWorkflows[0].id,
+          resourceType: "resume",
+          resourceId: id,
+          createdBy: student.userId || session.user.id,
+        });
+      } else {
+        // Fallback to old behavior if no workflow exists
+        const directorRecords = await db
+          .select({ id: directors.id })
+          .from(directors)
+          .where(eq(directors.userId, session.user.id))
+          .limit(1);
+        
+        let directorId: string | null = null;
+        if (directorRecords.length > 0) {
+          directorId = directorRecords[0].id;
+        }
+
+        await db
+          .update(students)
+          .set({
+            resumeApproved: true,
+            resumeApprovedBy: directorId,
+            resumeApprovedAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .where(eq(students.id, id));
+
+        // Notify student
+        if (student.userId) {
+          try {
+            await createNotification({
+              userId: student.userId,
+              type: "student",
+              title: "Resume ได้รับการอนุมัติ",
+              message: "Resume ของคุณได้รับการอนุมัติแล้ว คุณสามารถส่งใบสมัครฝึกงานได้",
+              link: `/documents`,
+              sendEmail: false,
+            });
+          } catch (error) {
+            console.error("Error sending notification:", error);
+          }
+        }
+
+        const updatedStudent = await db
+          .select()
+          .from(students)
+          .where(eq(students.id, id))
+          .limit(1);
+
+        return NextResponse.json(updatedStudent[0]);
       }
     }
 
-    // Update student resume approval status
+    // Get pending approvals for this workflow
+    const pendingApprovals = await getPendingApprovalsForUser(session.user.id);
+    const relevantApproval = pendingApprovals.find(
+      (a) => a.workflowInstanceId === workflowInstance!.id
+    );
+
+    if (!relevantApproval) {
+      return NextResponse.json(
+        { error: "No pending approval found for this resume" },
+        { status: 400 }
+      );
+    }
+
+    // Approve via workflow
+    await approveWorkflow(relevantApproval.id, session.user.id);
+
+    // Update student resume approval status (for backward compatibility)
+    const directorRecords = await db
+      .select({ id: directors.id })
+      .from(directors)
+      .where(eq(directors.userId, session.user.id))
+      .limit(1);
+    
+    let directorId: string | null = null;
+    if (directorRecords.length > 0) {
+      directorId = directorRecords[0].id;
+    }
+
     await db
       .update(students)
       .set({

@@ -13,6 +13,7 @@
     "db:studio": "drizzle-kit studio",
     "migrate:universities": "bun run scripts/migrate-universities.ts",
     "seed:users": "bun run scripts/seed-users.ts",
+    "seed:workflows": "bun run scripts/seed-workflows.ts",
     "pages:build": "npx @cloudflare/next-on-pages",
     "pages:dev": "wrangler pages dev .vercel/output/static --compatibility-date=2024-01-01",
     "pages:deploy": "npm run pages:build && wrangler pages deploy .vercel/output/static"

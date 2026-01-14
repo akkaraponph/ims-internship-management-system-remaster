@@ -94,7 +94,7 @@ async function handleDemoAPI(url: string, init?: RequestInit): Promise<Response>
 
   // Internships
   if (pathname === "/api/internships" || pathname.startsWith("/api/internships/")) {
-    return handleInternshipsAPI(pathname, method, init);
+    return handleInternshipsAPI(url, pathname, method, init);
   }
 
   // Job Positions
@@ -477,12 +477,15 @@ async function handleCompaniesAPI(pathname: string, method: string, init?: Reque
 }
 
 // Internships API
-async function handleInternshipsAPI(pathname: string, method: string, init?: RequestInit): Promise<Response> {
+async function handleInternshipsAPI(url: string, pathname: string, method: string, init?: RequestInit): Promise<Response> {
   const session = getSession();
   if (!session) return jsonResponse({ error: "Unauthorized" }, 401);
 
   if (pathname === "/api/internships") {
     if (method === "GET") {
+      // Get query parameters from the full URL
+      const urlObj = new URL(url, window.location.origin);
+      
       let internships = getEntity<Internship>(DEMO_STORAGE_KEYS.INTERNSHIPS);
       
       if (session.role === "student") {
@@ -505,6 +508,31 @@ async function handleInternshipsAPI(pathname: string, method: string, init?: Req
             i.studentId && universityStudentIds.includes(i.studentId)
           );
         }
+      }
+      
+      // Apply query parameter filters
+      const status = urlObj.searchParams.get("status");
+      const isSend = urlObj.searchParams.get("isSend");
+      const isConfirm = urlObj.searchParams.get("isConfirm");
+      
+      if (status) {
+        internships = internships.filter((i) => i.status === status);
+      }
+      
+      if (isSend !== null) {
+        const isSendValue = isSend === "1" || isSend === "yes" || isSend === 1;
+        internships = internships.filter((i) => {
+          const iIsSend = i.isSend === "yes" || i.isSend === "1" || i.isSend === 1;
+          return iIsSend === isSendValue;
+        });
+      }
+      
+      if (isConfirm !== null) {
+        const isConfirmValue = isConfirm === "1" || isConfirm === "yes" || isConfirm === 1;
+        internships = internships.filter((i) => {
+          const iIsConfirm = i.isConfirm === "yes" || i.isConfirm === "1" || i.isConfirm === 1;
+          return iIsConfirm === isConfirmValue;
+        });
       }
       
       return jsonResponse(internships);
@@ -1426,13 +1454,26 @@ async function handleAnnouncementsPublicAPI(
 // Student Resumes Pending API
 async function handleStudentResumesPendingAPI(method: string, init?: RequestInit): Promise<Response> {
   const session = getSession();
-  if (!session || (session.role !== "admin" && session.role !== "director")) {
+  if (!session || (session.role !== "admin" && session.role !== "director" && session.role !== "super-admin")) {
     return jsonResponse({ error: "Unauthorized" }, 401);
   }
 
   if (method === "GET") {
-    const students = getEntity<Student>(DEMO_STORAGE_KEYS.STUDENTS);
-    const pending = students.filter((s) => s.resumeStatus === false || s.resumeStatus === null);
+    let students = getEntity<Student>(DEMO_STORAGE_KEYS.STUDENTS);
+    
+    // Filter by university for directors and admins (not super-admin)
+    if (session.role !== "super-admin" && session.universityId) {
+      students = students.filter((s) => s.universityId === session.universityId);
+    }
+    
+    // Filter for pending resumes: has resume file but not approved
+    // In demo mode, we check resumeStatus === false (has resume but not approved)
+    // and ensure resume field exists
+    const pending = students.filter((s) => 
+      s.resume && 
+      (s.resumeStatus === false || s.resumeStatus === null)
+    );
+    
     return jsonResponse(pending);
   }
 

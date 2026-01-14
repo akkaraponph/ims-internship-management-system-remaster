@@ -19,6 +19,13 @@ export const announcementTypeEnum = pgEnum("announcement_type", ["info", "warnin
 export const announcementPriorityEnum = pgEnum("announcement_priority", ["low", "medium", "high"]);
 export const notificationTypeEnum = pgEnum("notification_type", ["system", "internship", "student", "company", "announcement"]);
 export const backupTypeEnum = pgEnum("backup_type", ["full", "partial"]);
+export const workflowTypeEnum = pgEnum("workflow_type", ["internship", "resume"]);
+export const workflowStatusEnum = pgEnum("workflow_status", ["active", "inactive"]);
+export const workflowInstanceStatusEnum = pgEnum("workflow_instance_status", ["pending", "in_progress", "approved", "rejected", "cancelled"]);
+export const workflowFlowTypeEnum = pgEnum("workflow_flow_type", ["sequential", "parallel"]);
+export const workflowResponsibilityTypeEnum = pgEnum("workflow_responsibility_type", ["role", "user", "director"]);
+export const approvalStatusEnum = pgEnum("approval_status", ["pending", "approved", "rejected"]);
+export const approvalActionEnum = pgEnum("approval_action", ["created", "approved", "rejected", "commented", "cancelled"]);
 
 // Universities table
 export const universities = pgTable("universities", {
@@ -574,6 +581,160 @@ export const notificationSettingsRelations = relations(notificationSettings, ({ 
 export const backupsRelations = relations(backups, ({ one }) => ({
   creator: one(users, {
     fields: [backups.createdBy],
+    references: [users.id],
+  }),
+}));
+
+// Workflows table
+export const workflows = pgTable("workflows", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  type: workflowTypeEnum("type").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  status: workflowStatusEnum("status").notNull().default("active"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Workflow Steps table
+export const workflowSteps = pgTable("workflow_steps", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workflowId: uuid("workflow_id").references(() => workflows.id).notNull(),
+  sequence: integer("sequence").notNull(),
+  stepCode: varchar("step_code", { length: 100 }).notNull(),
+  stepName: varchar("step_name", { length: 255 }).notNull(),
+  flowType: workflowFlowTypeEnum("flow_type").notNull().default("sequential"),
+  isActive: boolean("is_active").notNull().default(true),
+  requiresAll: boolean("requires_all").notNull().default(true), // For parallel flows
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Workflow Step Responsibilities table
+export const workflowStepResponsibilities = pgTable("workflow_step_responsibilities", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workflowStepId: uuid("workflow_step_id").references(() => workflowSteps.id).notNull(),
+  responsibilityType: workflowResponsibilityTypeEnum("responsibility_type").notNull(),
+  responsibilityId: uuid("responsibility_id"), // For specific users or roles
+  canApprove: boolean("can_approve").notNull().default(true),
+  canReject: boolean("can_reject").notNull().default(true),
+  canComment: boolean("can_comment").notNull().default(true),
+  priority: integer("priority").notNull().default(0), // For parallel flows
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Workflow Instances table
+export const workflowInstances = pgTable("workflow_instances", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workflowId: uuid("workflow_id").references(() => workflows.id).notNull(),
+  resourceType: workflowTypeEnum("resource_type").notNull(), // internship or resume
+  resourceId: uuid("resource_id").notNull(),
+  status: workflowInstanceStatusEnum("status").notNull().default("pending"),
+  currentStepSequence: integer("current_step_sequence").default(1),
+  createdBy: uuid("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Workflow Approvals table
+export const workflowApprovals = pgTable("workflow_approvals", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workflowInstanceId: uuid("workflow_instance_id").references(() => workflowInstances.id).notNull(),
+  workflowStepId: uuid("workflow_step_id").references(() => workflowSteps.id).notNull(),
+  sequence: integer("sequence").notNull(),
+  status: approvalStatusEnum("status").notNull().default("pending"),
+  responsible: boolean("responsible").notNull().default(false),
+  approverId: uuid("approver_id").references(() => users.id),
+  requestorId: uuid("requestor_id").references(() => users.id).notNull(),
+  comments: text("comments"),
+  requestTime: timestamp("request_time").defaultNow().notNull(),
+  responseTime: timestamp("response_time"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Workflow Approval History table
+export const workflowApprovalHistory = pgTable("workflow_approval_history", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workflowInstanceId: uuid("workflow_instance_id").references(() => workflowInstances.id).notNull(),
+  workflowApprovalId: uuid("workflow_approval_id").references(() => workflowApprovals.id),
+  action: approvalActionEnum("action").notNull(),
+  performedBy: uuid("performed_by").references(() => users.id).notNull(),
+  previousStatus: varchar("previous_status", { length: 50 }),
+  newStatus: varchar("new_status", { length: 50 }),
+  comments: text("comments"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Workflow Relations
+export const workflowsRelations = relations(workflows, ({ many }) => ({
+  steps: many(workflowSteps),
+  instances: many(workflowInstances),
+}));
+
+export const workflowStepsRelations = relations(workflowSteps, ({ one, many }) => ({
+  workflow: one(workflows, {
+    fields: [workflowSteps.workflowId],
+    references: [workflows.id],
+  }),
+  responsibilities: many(workflowStepResponsibilities),
+  approvals: many(workflowApprovals),
+}));
+
+export const workflowStepResponsibilitiesRelations = relations(workflowStepResponsibilities, ({ one }) => ({
+  workflowStep: one(workflowSteps, {
+    fields: [workflowStepResponsibilities.workflowStepId],
+    references: [workflowSteps.id],
+  }),
+}));
+
+export const workflowInstancesRelations = relations(workflowInstances, ({ one, many }) => ({
+  workflow: one(workflows, {
+    fields: [workflowInstances.workflowId],
+    references: [workflows.id],
+  }),
+  creator: one(users, {
+    fields: [workflowInstances.createdBy],
+    references: [users.id],
+  }),
+  approvals: many(workflowApprovals),
+  history: many(workflowApprovalHistory),
+}));
+
+export const workflowApprovalsRelations = relations(workflowApprovals, ({ one, many }) => ({
+  workflowInstance: one(workflowInstances, {
+    fields: [workflowApprovals.workflowInstanceId],
+    references: [workflowInstances.id],
+  }),
+  workflowStep: one(workflowSteps, {
+    fields: [workflowApprovals.workflowStepId],
+    references: [workflowSteps.id],
+  }),
+  approver: one(users, {
+    fields: [workflowApprovals.approverId],
+    references: [users.id],
+  }),
+  requestor: one(users, {
+    fields: [workflowApprovals.requestorId],
+    references: [users.id],
+  }),
+  history: many(workflowApprovalHistory),
+}));
+
+export const workflowApprovalHistoryRelations = relations(workflowApprovalHistory, ({ one }) => ({
+  workflowInstance: one(workflowInstances, {
+    fields: [workflowApprovalHistory.workflowInstanceId],
+    references: [workflowInstances.id],
+  }),
+  workflowApproval: one(workflowApprovals, {
+    fields: [workflowApprovalHistory.workflowApprovalId],
+    references: [workflowApprovals.id],
+  }),
+  performer: one(users, {
+    fields: [workflowApprovalHistory.performedBy],
     references: [users.id],
   }),
 }));

@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { internships, students } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { getWorkflowInstanceByResource } from "@/lib/workflows/workflow.service";
 
 export async function POST(
   request: NextRequest,
@@ -45,6 +46,15 @@ export async function POST(
       if (!studentRecords[0].resumeApproved) {
         return NextResponse.json(
           { error: "Resume must be approved by director before sending internship application to company" },
+          { status: 400 }
+        );
+      }
+
+      // Check workflow status - must be at least past director review
+      const workflowInstance = await getWorkflowInstanceByResource("internship", id);
+      if (workflowInstance && workflowInstance.status !== "approved" && workflowInstance.currentStepSequence && workflowInstance.currentStepSequence < 2) {
+        return NextResponse.json(
+          { error: "Internship must pass director review before sending to company" },
           { status: 400 }
         );
       }

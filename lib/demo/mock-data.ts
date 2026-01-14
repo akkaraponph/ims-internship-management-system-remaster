@@ -95,36 +95,43 @@ export function generateMockData() {
     { first: "ธนพล", last: "เก่ง" },
   ];
 
-  const students: Student[] = studentNames.map((name, index) => ({
-    id: generateId(),
-    userId: null, // Will link later
-    universityId: universityIds[index % universityIds.length],
-    email: `student${index + 1}@example.com`,
-    idCard: `1234567890${index}`,
-    firstName: name.first,
-    lastName: name.last,
-    phone: `081234567${index}`,
-    program: "วิศวกรรมคอมพิวเตอร์",
-    department: "คณะวิศวกรรมศาสตร์",
-    skill: "Programming, Web Development",
-    interest: "Software Engineering",
-    projectTopic: "ระบบจัดการข้อมูล",
+  const students: Student[] = studentNames.map((name, index) => {
+    const hasResume = index % 2 === 0;
+    // Ensure more students are in the first university (director's university)
+    const universityId = index < 8 ? universityIds[0] : universityIds[index % universityIds.length];
+    
+    return {
+      id: generateId(),
+      userId: null, // Will link later
+      universityId: universityId,
+      email: `student${index + 1}@example.com`,
+      idCard: `1234567890${index}`,
+      firstName: name.first,
+      lastName: name.last,
+      phone: `081234567${index}`,
+      program: "วิศวกรรมคอมพิวเตอร์",
+      department: "คณะวิศวกรรมศาสตร์",
+      skill: "Programming, Web Development",
+      interest: "Software Engineering",
+      projectTopic: "ระบบจัดการข้อมูล",
       dateOfBirth: new Date(2000 + (index % 5), index % 12, (index % 28) + 1).toISOString() as any,
-    experience: "เคยฝึกงานที่บริษัท ABC",
-    religion: "พุทธ",
-    fatherName: `พ่อ${name.first}`,
-    fatherJob: "พนักงานบริษัท",
-    motherName: `แม่${name.first}`,
-    motherJob: "แม่บ้าน",
-    presentGpa: (3.0 + (index % 2)).toFixed(2),
-    image: null,
-    resumeStatus: index % 2 === 0,
-    isCoInternship: false,
-    presentAddressId: null,
-    permanentAddressId: null,
-    createdAt: new Date("2024-01-01"),
-    updatedAt: new Date("2024-01-01"),
-  }));
+      experience: "เคยฝึกงานที่บริษัท ABC",
+      religion: "พุทธ",
+      fatherName: `พ่อ${name.first}`,
+      fatherJob: "พนักงานบริษัท",
+      motherName: `แม่${name.first}`,
+      motherJob: "แม่บ้าน",
+      presentGpa: (3.0 + (index % 2)).toFixed(2),
+      image: null,
+      resume: hasResume ? null : `/uploads/demo/resumes/resume-${index + 1}.pdf`, // Add resume URL for pending resumes
+      resumeStatus: hasResume,
+      isCoInternship: false,
+      presentAddressId: null,
+      permanentAddressId: null,
+      createdAt: new Date("2024-01-01"),
+      updatedAt: new Date("2024-01-01"),
+    };
+  });
 
   // Create student users
   students.forEach((student, index) => {
@@ -303,13 +310,33 @@ export function generateMockData() {
 
   // Generate Internships
   const internships: Internship[] = [];
-  const statuses: ("pending" | "approved" | "rejected")[] = ["pending", "approved", "rejected"];
-  
+  // Create a better distribution: some pending, some confirmed, some rejected
+  // For director's university students (first 8 students), ensure good mix
   students.forEach((student, studentIndex) => {
     if (studentIndex < jobPositions.length) {
       const jobPosition = jobPositions[studentIndex % jobPositions.length];
       const company = companies.find((c) => c.id === jobPosition.companyId)!;
-      const status = statuses[studentIndex % statuses.length];
+      
+      // Better status distribution:
+      // - 40% approved (isSend="yes", isConfirm="yes")
+      // - 40% pending (isSend="yes", isConfirm="no")
+      // - 20% rejected (isSend="yes", isConfirm="no", status="rejected")
+      let status: "pending" | "approved" | "rejected";
+      let isConfirm: "yes" | "no";
+      
+      if (studentIndex % 5 === 0 || studentIndex % 5 === 1) {
+        // 40% approved
+        status = "approved";
+        isConfirm = "yes";
+      } else if (studentIndex % 5 === 2 || studentIndex % 5 === 3) {
+        // 40% pending
+        status = "pending";
+        isConfirm = "no";
+      } else {
+        // 20% rejected
+        status = "rejected";
+        isConfirm = "no";
+      }
 
       internships.push({
         id: generateId(),
@@ -317,7 +344,7 @@ export function generateMockData() {
         companyId: company.id,
         jobPositionId: jobPosition.id,
         isSend: "yes",
-        isConfirm: status === "approved" ? "yes" : "no",
+        isConfirm: isConfirm,
         status: status,
         startDate: status === "approved" ? new Date(2024, 5, 1).toISOString() as any : null,
         endDate: status === "approved" ? new Date(2024, 11, 31).toISOString() as any : null,
