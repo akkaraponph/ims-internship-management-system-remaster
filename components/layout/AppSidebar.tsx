@@ -93,6 +93,8 @@ const studentMenuItems: MenuItem[] = [
   { title: "ดูตัวอย่างโปรไฟล์", url: "/profile/preview", icon: Eye },
   { title: "การฝึกงาน", url: "/internship", icon: ClipboardList },
   { title: "เอกสาร", url: "/documents", icon: FileText },
+  { title: "ค้นหาตำแหน่งงาน", url: "/jobs", icon: Briefcase },
+  { title: "ค้นหาบริษัท", url: "/companies/public", icon: Building2 },
 ];
 
 const companyMenuItems: MenuItem[] = [
@@ -103,6 +105,7 @@ const companyMenuItems: MenuItem[] = [
   { title: "นักศึกษาฝึกงาน", url: "/company/students", icon: GraduationCap },
   { title: "จัดการผู้ใช้", url: "/company/users", icon: Users },
   { title: "ประกาศข่าวสาร", url: "/announcements", icon: Megaphone },
+  { title: "รายงาน", url: "/reports", icon: BarChart3 },
 ];
 
 export function AppSidebar() {
@@ -192,8 +195,8 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border">
-        <Link href="/" className="flex items-center gap-3 px-2 py-3 hover:opacity-80 transition-opacity">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+        <Link href="/" className="flex items-center gap-3 px-2 py-3 hover:opacity-80 transition-opacity group">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg group-hover:scale-110 transition-transform duration-300">
             <GraduationCap className="h-6 w-6" />
           </div>
           {!collapsed && (
@@ -218,7 +221,7 @@ export function AppSidebar() {
                 const isActive = pathname === item.url || pathname?.startsWith(item.url + "/");
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild tooltip={item.title} isActive={isActive}>
+                    <SidebarMenuButton asChild tooltip={item.title} isActive={isActive} className="transition-all duration-300 hover:scale-[1.02]">
                       <Link href={item.url}>
                         <item.icon className="h-4 w-4" />
                         <span>{item.title}</span>
@@ -236,9 +239,9 @@ export function AppSidebar() {
         <div className="flex flex-col gap-2 p-2">
           {!collapsed && user && (
             <>
-              <div className="flex items-center gap-3 rounded-lg bg-sidebar-accent p-2">
-                <Avatar className="h-9 w-9">
-                  <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+              <div className="flex items-center gap-3 rounded-lg bg-sidebar-accent p-3 border border-sidebar-border/50 hover:bg-sidebar-accent/80 transition-colors">
+                <Avatar className="h-9 w-9 border-2 border-sidebar-border/50">
+                  <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-sm font-semibold">
                     {user.username?.charAt(0).toUpperCase() || "U"}
                   </AvatarFallback>
                 </Avatar>
@@ -256,7 +259,7 @@ export function AppSidebar() {
           )}
           <Button
             variant="ghost"
-            className="w-full justify-start gap-3 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            className="w-full justify-start gap-3 text-destructive hover:bg-destructive/10 hover:text-destructive transition-all duration-300 hover:scale-[1.02]"
             onClick={handleSignOut}
           >
             <LogOut className="h-4 w-4" />

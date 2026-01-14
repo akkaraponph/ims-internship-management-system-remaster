@@ -111,16 +111,18 @@ export function CompanyDashboard() {
   const totalInternships = statusData.pending + statusData.approved + statusData.rejected;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <AnnouncementBanner />
       
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">ยินดีต้อนรับ, บริษัท</h2>
-        <p className="text-muted-foreground">ภาพรวมระบบจัดการการฝึกงานประจำวันนี้</p>
+      <div className="space-y-2">
+        <h2 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+          ยินดีต้อนรับ, บริษัท
+        </h2>
+        <p className="text-lg text-muted-foreground">ภาพรวมระบบจัดการการฝึกงานประจำวันนี้</p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           let value = "0";
@@ -130,15 +132,17 @@ export function CompanyDashboard() {
           else if (index === 3) value = statsData.activeInterns.toString();
 
           return (
-            <Card key={stat.title}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                <div className={`${stat.bgColor} p-2 rounded-lg`}>
-                  <Icon className={`h-4 w-4 ${stat.color}`} />
+            <Card key={stat.title} className="border-2 hover:shadow-xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 backdrop-blur-sm group">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
+                <div className={`${stat.bgColor} p-3 rounded-xl group-hover:scale-110 transition-transform duration-300 shadow-md`}>
+                  <Icon className={`h-5 w-5 ${stat.color}`} />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{value}</div>
+                <div className="text-3xl font-bold mb-2 bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                  {value}
+                </div>
                 <p className="text-xs text-muted-foreground">{stat.change}</p>
               </CardContent>
             </Card>
@@ -147,14 +151,14 @@ export function CompanyDashboard() {
       </div>
 
       {/* Internship Status */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>สถานะการฝึกงาน</CardTitle>
-            <CardDescription>ภาพรวมสถานะการฝึกงานทั้งหมด</CardDescription>
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card className="border-2 hover:shadow-xl transition-all duration-300 hover:scale-[1.01] backdrop-blur-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg">สถานะการฝึกงาน</CardTitle>
+            <CardDescription className="pt-1">ภาพรวมสถานะการฝึกงานทั้งหมด</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-5">
               {internshipStatus.map((status, index) => {
                 let count = 0;
                 if (index === 0) count = statusData.pending;
@@ -164,15 +168,15 @@ export function CompanyDashboard() {
                 const percentage = totalInternships > 0 ? (count / totalInternships) * 100 : 0;
 
                 return (
-                  <div key={status.label} className="space-y-2">
+                  <div key={status.label} className="space-y-3 p-4 rounded-lg border border-border/50 hover:bg-muted/30 transition-colors">
                     <div className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-2">
-                        <div className={`h-3 w-3 rounded-full ${status.color}`} />
-                        <span>{status.label}</span>
+                        <div className={`h-3 w-3 rounded-full ${status.color} shadow-sm`} />
+                        <span className="font-medium">{status.label}</span>
                       </div>
-                      <span className="font-medium">{count}</span>
+                      <span className="font-bold text-lg">{count}</span>
                     </div>
-                    <Progress value={percentage} className="h-2" />
+                    <Progress value={percentage} className="h-3 shadow-inner" />
                   </div>
                 );
               })}
@@ -180,18 +184,18 @@ export function CompanyDashboard() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>การแจ้งเตือนล่าสุด</CardTitle>
-            <CardDescription>อัปเดตล่าสุดจากระบบ</CardDescription>
+        <Card className="border-2 hover:shadow-xl transition-all duration-300 hover:scale-[1.01] backdrop-blur-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg">การแจ้งเตือนล่าสุด</CardTitle>
+            <CardDescription className="pt-1">อัปเดตล่าสุดจากระบบ</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-yellow-500 mt-0.5" />
+              <div className="flex items-start gap-3 p-4 rounded-lg border border-yellow-500/20 bg-yellow-500/10">
+                <AlertCircle className="h-5 w-5 text-yellow-500 mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
                   <p className="text-sm font-medium">ไม่มีแจ้งเตือนใหม่</p>
-                  <p className="text-xs text-muted-foreground">ระบบจะแจ้งเตือนเมื่อมีการอัปเดต</p>
+                  <p className="text-xs text-muted-foreground mt-1">ระบบจะแจ้งเตือนเมื่อมีการอัปเดต</p>
                 </div>
               </div>
             </div>

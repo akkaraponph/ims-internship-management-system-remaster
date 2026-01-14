@@ -497,7 +497,3 @@ export function quickAction(actionName: string): { success: boolean; message?: s
     return { success: false, error: error.message || "Unknown error" };
   }
 }
-
-function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-}

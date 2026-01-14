@@ -19,6 +19,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { DemoModeIndicator } from "@/components/demo/DemoModeIndicator";
 import { DemoModeBanner } from "@/components/demo/DemoModeBanner";
+import { DashboardNavbar } from "./DashboardNavbar";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -53,7 +54,10 @@ export function DashboardLayout({ children, title = "แดชบอร์ด" }
   if (isLoading || (isDemo && !demoSession && status === "loading")) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        <div className="space-y-4 text-center">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto" />
+          <p className="text-sm text-muted-foreground">กำลังโหลด...</p>
+        </div>
       </div>
     );
   }
@@ -71,26 +75,12 @@ export function DashboardLayout({ children, title = "แดชบอร์ด" }
       <div className="flex min-h-screen w-full">
         <AppSidebar />
         <SidebarInset className="flex flex-col">
-          <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b bg-background px-4">
-            <div className="flex items-center gap-2">
-              <SidebarTrigger className="-ml-1" />
-              <Separator orientation="vertical" className="mr-2 h-4" />
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>{title}</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
-            </div>
-            <div className="flex items-center gap-2">
-              <DemoModeIndicator />
-              <ThemeToggle />
-            </div>
-          </header>
+          <DashboardNavbar title={title} />
           <DemoModeBanner />
-          <main className="flex-1 overflow-auto p-6">
-            {children}
+          <main className="flex-1 overflow-auto p-6 sm:p-8">
+            <div className="max-w-7xl mx-auto">
+              {children}
+            </div>
           </main>
         </SidebarInset>
       </div>

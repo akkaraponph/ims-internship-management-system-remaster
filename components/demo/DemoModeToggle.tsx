@@ -14,7 +14,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { DemoRoleSelector } from "./DemoRoleSelector";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export function DemoModeToggle() {
   const {
@@ -26,6 +26,12 @@ export function DemoModeToggle() {
     selectRole,
   } = useDemoMode();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Prevent hydration mismatch by only rendering client-side state after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleToggle = () => {
     if (isDemo) {
@@ -54,20 +60,20 @@ export function DemoModeToggle() {
   return (
     <>
       <div className="flex items-center gap-2">
-        {isDemo && (
+        {mounted && isDemo && (
           <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-600 dark:text-yellow-400">
             <TestTube className="mr-1 h-3 w-3" />
             {selectedRole ? `Demo: ${getRoleLabel(selectedRole)}` : "Demo Mode"}
           </Badge>
         )}
         <Button
-          variant={isDemo ? "default" : "outline"}
+          variant={mounted && isDemo ? "default" : "outline"}
           size="sm"
           onClick={handleToggle}
           className="gap-2"
         >
           <TestTube className="h-4 w-4" />
-          {isDemo ? "ปิด Demo Mode" : "เปิด Demo Mode"}
+          {mounted && isDemo ? "ปิด Demo Mode" : "เปิด Demo Mode"}
         </Button>
       </div>
 

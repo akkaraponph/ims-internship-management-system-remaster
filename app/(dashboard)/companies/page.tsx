@@ -284,25 +284,35 @@ export default function CompaniesPage() {
   };
 
   if (isLoading) {
-    return <div>กำลังโหลด...</div>;
+    return (
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <div className="h-8 w-64 bg-muted animate-pulse rounded-md" />
+          <div className="h-4 w-96 bg-muted animate-pulse rounded-md" />
+        </div>
+        <div className="h-96 bg-muted animate-pulse rounded-lg" />
+      </div>
+    );
   }
 
   const isSuperAdmin = session?.user?.role === "super-admin";
   const canCreate = session?.user?.role === "admin" || session?.user?.role === "director" || isSuperAdmin;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">จัดการบริษัท</h2>
-          <p className="text-muted-foreground">
+    <div className="space-y-8">
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <div className="space-y-2">
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+            จัดการบริษัท
+          </h2>
+          <p className="text-lg text-muted-foreground">
             จัดการข้อมูลบริษัทและสถานประกอบการที่ร่วมโครงการฝึกงาน
           </p>
         </div>
         {canCreate && (
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
                 <Plus className="mr-2 h-4 w-4" />
                 เพิ่มบริษัท
               </Button>
@@ -433,85 +443,93 @@ export default function CompaniesPage() {
         )}
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>รายชื่อบริษัท</CardTitle>
-          <CardDescription>จัดการข้อมูลบริษัททั้งหมด</CardDescription>
+      <Card className="border-2 hover:shadow-xl transition-all duration-300 backdrop-blur-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg">รายชื่อบริษัท</CardTitle>
+          <CardDescription className="pt-1">จัดการข้อมูลบริษัททั้งหมด</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ชื่อบริษัท</TableHead>
-                <TableHead>ประเภท</TableHead>
-                <TableHead>ผู้ติดต่อ</TableHead>
-                <TableHead>เบอร์โทรศัพท์</TableHead>
-                <TableHead>มหาวิทยาลัย</TableHead>
-                <TableHead>สถานะ</TableHead>
-                <TableHead className="text-right">การจัดการ</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {companies.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground">
-                    ไม่พบข้อมูลบริษัท
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/30 border-b-2 border-border">
+                  <TableHead className="font-semibold">ชื่อบริษัท</TableHead>
+                  <TableHead className="font-semibold">ประเภท</TableHead>
+                  <TableHead className="font-semibold">ผู้ติดต่อ</TableHead>
+                  <TableHead className="font-semibold">เบอร์โทรศัพท์</TableHead>
+                  <TableHead className="font-semibold">มหาวิทยาลัย</TableHead>
+                  <TableHead className="font-semibold">สถานะ</TableHead>
+                  <TableHead className="text-right font-semibold">การจัดการ</TableHead>
                 </TableRow>
-              ) : (
-                companies.map((company) => (
-                  <TableRow key={company.id}>
-                    <TableCell className="font-medium">{company.name}</TableCell>
-                    <TableCell>{company.type || "-"}</TableCell>
-                    <TableCell>
-                      {company.contactPersonName
-                        ? `${company.contactPersonName}${company.contactPersonPosition ? ` (${company.contactPersonPosition})` : ""}`
-                        : "-"}
+              </TableHeader>
+              <TableBody>
+                {companies.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center text-muted-foreground py-12">
+                      <Building2 className="h-16 w-16 mx-auto mb-4 text-muted-foreground/30" />
+                      <p className="text-sm">ไม่พบข้อมูลบริษัท</p>
                     </TableCell>
-                    <TableCell>{company.phone || company.contactPersonPhone || "-"}</TableCell>
-                    <TableCell>{getUniversityName(company.universityId)}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={company.isActive ? "default" : "secondary"}
-                        className={
-                          company.isActive
-                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                            : ""
-                        }
-                      >
-                        {company.isActive ? "เปิดใช้งาน" : "ปิดใช้งาน"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Link href={`/companies/${company.id}/users`}>
-                          <Button variant="outline" size="sm" title="จัดการผู้ใช้">
-                            <Users className="h-4 w-4" />
-                          </Button>
-                        </Link>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openEditDialog(company)}
+                  </TableRow>
+                ) : (
+                  companies.map((company) => (
+                    <TableRow 
+                      key={company.id}
+                      className="hover:bg-muted/30 transition-colors border-b border-border/50"
+                    >
+                      <TableCell className="font-medium">{company.name}</TableCell>
+                      <TableCell>{company.type || "-"}</TableCell>
+                      <TableCell>
+                        {company.contactPersonName
+                          ? `${company.contactPersonName}${company.contactPersonPosition ? ` (${company.contactPersonPosition})` : ""}`
+                          : "-"}
+                      </TableCell>
+                      <TableCell>{company.phone || company.contactPersonPhone || "-"}</TableCell>
+                      <TableCell>{getUniversityName(company.universityId)}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={company.isActive ? "default" : "secondary"}
+                          className={
+                            company.isActive
+                              ? "bg-green-500 hover:bg-green-600 text-white shadow-sm"
+                              : "bg-muted hover:bg-muted/80"
+                          }
                         >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        {(isSuperAdmin || session?.user?.role === "admin") && (
+                          {company.isActive ? "เปิดใช้งาน" : "ปิดใช้งาน"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Link href={`/companies/${company.id}/users`}>
+                            <Button variant="outline" size="sm" title="จัดการผู้ใช้" className="hover:bg-primary hover:text-primary-foreground transition-colors">
+                              <Users className="h-4 w-4" />
+                            </Button>
+                          </Link>
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => openDeleteDialog(company)}
+                            onClick={() => openEditDialog(company)}
+                            className="hover:bg-primary hover:text-primary-foreground transition-colors"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Edit className="h-4 w-4" />
                           </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                          {(isSuperAdmin || session?.user?.role === "admin") && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openDeleteDialog(company)}
+                              className="hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 

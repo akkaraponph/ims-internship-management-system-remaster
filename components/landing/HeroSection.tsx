@@ -66,7 +66,7 @@ export function HeroSection() {
       </div>
 
       <div className="container mx-auto relative z-10">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left side - Content */}
           <div className="space-y-8 animate-fade-in-up">
             <div className="space-y-6">
@@ -89,32 +89,38 @@ export function HeroSection() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button size="lg" asChild className="group h-12 px-8 text-lg shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all duration-300 hover:scale-105">
+              <Button size="lg" asChild className="group h-12 px-8 text-lg shadow-xl shadow-primary/25 hover:shadow-primary/40 transition-all duration-300 hover:scale-105 bg-gradient-to-r from-primary to-primary/90">
                 <Link href={isAuthenticated ? "/dashboard" : "/login"}>
                   {isAuthenticated ? "เข้าสู่แอปพลิเคชัน" : "เริ่มต้นใช้งาน"}
                   <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </Link>
               </Button>
               {!isAuthenticated && (
-                <Button size="lg" variant="outline" asChild className="h-12 px-8 text-lg border-2 hover:bg-muted/50 transition-all duration-300 hover:scale-105">
+                <Button size="lg" variant="outline" asChild className="h-12 px-8 text-lg border-2 hover:bg-muted/50 hover:border-primary/50 transition-all duration-300 hover:scale-105 backdrop-blur-sm">
                   <Link href="/register">สมัครสมาชิก</Link>
                 </Button>
               )}
             </div>
 
             {/* Enhanced Stats */}
-            <div className="grid grid-cols-3 gap-6 pt-8 border-t border-border">
-              <div className="group">
-                <div className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-300">100%</div>
-                <div className="text-sm text-muted-foreground mt-1">ครอบคลุม</div>
+            <div className="grid grid-cols-3 gap-6 pt-8 border-t border-border/50">
+              <div className="group cursor-default">
+                <div className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-300">
+                  100%
+                </div>
+                <div className="text-sm text-muted-foreground mt-1.5">ครอบคลุม</div>
               </div>
-              <div className="group">
-                <div className="text-3xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-300">24/7</div>
-                <div className="text-sm text-muted-foreground mt-1">พร้อมใช้งาน</div>
+              <div className="group cursor-default">
+                <div className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-300">
+                  24/7
+                </div>
+                <div className="text-sm text-muted-foreground mt-1.5">พร้อมใช้งาน</div>
               </div>
-              <div className="group">
-                <div className="text-3xl font-bold bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-300">Secure</div>
-                <div className="text-sm text-muted-foreground mt-1">ปลอดภัย</div>
+              <div className="group cursor-default">
+                <div className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-300">
+                  Secure
+                </div>
+                <div className="text-sm text-muted-foreground mt-1.5">ปลอดภัย</div>
               </div>
             </div>
           </div>
@@ -129,20 +135,23 @@ export function HeroSection() {
                 return (
                   <Card
                     key={index}
-                    className={`p-6 space-y-4 border-2 bg-gradient-to-br ${card.gradient} backdrop-blur-sm hover:shadow-2xl transition-all duration-500 hover:scale-105 hover:-translate-y-2 ${isOffset ? "mt-12" : ""}`}
+                    className={`group relative p-6 space-y-4 border-2 bg-gradient-to-br ${card.gradient} backdrop-blur-sm hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 hover:scale-105 hover:-translate-y-2 ${isOffset ? "mt-12" : ""} overflow-hidden`}
                     style={{ animationDelay: card.delay }}
                   >
-                    <div className={`flex h-16 w-16 items-center justify-center rounded-2xl ${card.iconBg} ${card.iconColor} shadow-lg transform transition-all duration-300 hover:rotate-12 hover:scale-110`}>
+                    <div className={`flex h-16 w-16 items-center justify-center rounded-2xl ${card.iconBg} ${card.iconColor} shadow-xl transform transition-all duration-500 group-hover:rotate-12 group-hover:scale-110 border-2 border-white/10`}>
                       <Icon className="h-8 w-8" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-lg mb-1">{card.title}</h3>
-                      <p className="text-sm text-muted-foreground">
+                      <h3 className="font-bold text-lg mb-1.5 bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                        {card.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
                         {card.description}
                       </p>
                     </div>
-                    {/* Decorative element */}
+                    {/* Decorative elements */}
                     <div className="absolute -bottom-2 -right-2 w-16 h-16 bg-white/5 rounded-full blur-xl" />
+                    <div className="absolute -top-2 -left-2 w-12 h-12 bg-white/5 rounded-full blur-xl" />
                   </Card>
                 );
               })}

@@ -82,17 +82,22 @@ const roles = [
 
 export function AboutSection() {
   return (
-    <section id="about" className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-background to-muted/20 relative overflow-hidden">
+    <section id="about" className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-background to-muted/20 relative overflow-hidden">
       {/* Decorative Background */}
       <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-primary/5 to-transparent -z-10" />
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-blue-500/10 to-purple-500/10 rounded-full blur-3xl -z-10" />
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-blue-500/10 to-purple-500/10 rounded-full blur-3xl -z-10 animate-pulse-glow" />
+      <div className="absolute top-1/2 right-1/4 w-64 h-64 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-full blur-3xl -z-10 animate-pulse-glow" style={{ animationDelay: "1.5s" }} />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:24px_24px] opacity-20" />
 
-      <div className="container mx-auto">
-        <div className="text-center space-y-4 mb-16">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
+      <div className="container mx-auto relative z-10">
+        <div className="text-center space-y-6 mb-20">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-sm mb-4">
+            <span className="text-sm font-medium text-primary">เกี่ยวกับเรา</span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight bg-gradient-to-r from-foreground via-foreground/90 to-foreground/70 bg-clip-text text-transparent">
             เกี่ยวกับระบบ
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             ระบบจัดการการฝึกงานที่พัฒนาด้วยเทคโนโลยีล่าสุด
             เพื่อให้การจัดการการฝึกงานเป็นเรื่องง่ายและมีประสิทธิภาพ
           </p>
@@ -115,14 +120,16 @@ export function AboutSection() {
                     {/* Timeline Dot */}
                     <div className="hidden md:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-primary border-4 border-background z-10" />
                     
-                    <Card className="text-center border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:scale-105 bg-card/50 backdrop-blur-sm">
-                      <div className="p-6 space-y-4">
-                        <div className={`flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br ${tech.color} mx-auto shadow-lg`}>
-                          <Icon className="h-8 w-8 text-white" />
+                    <Card className="text-center border-2 hover:border-primary/50 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10 hover:scale-105 bg-card/50 backdrop-blur-sm group">
+                      <div className="p-8 space-y-5">
+                        <div className={`flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br ${tech.color} mx-auto shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 border-2 border-white/20`}>
+                          <Icon className="h-10 w-10 text-white" />
                         </div>
                         <div>
-                          <h4 className="text-lg font-bold mb-2">{tech.name}</h4>
-                          <p className="text-sm text-muted-foreground">{tech.description}</p>
+                          <h4 className="text-lg font-bold mb-2 bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                            {tech.name}
+                          </h4>
+                          <p className="text-sm text-muted-foreground leading-relaxed">{tech.description}</p>
                         </div>
                       </div>
                     </Card>
@@ -139,14 +146,14 @@ export function AboutSection() {
             บทบาทผู้ใช้ในระบบ
           </h3>
           <Tabs defaultValue="admin" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-8 bg-muted/50">
+            <TabsList className="grid w-full grid-cols-3 mb-12 bg-muted/50 backdrop-blur-sm border border-border/50">
               {roles.map((role) => {
                 const Icon = role.icon;
                 return (
                   <TabsTrigger
                     key={role.id}
                     value={role.id}
-                    className="data-[state=active]:bg-background data-[state=active]:shadow-md"
+                    className="data-[state=active]:bg-background data-[state=active]:shadow-lg data-[state=active]:border-primary/50 transition-all duration-300"
                   >
                     <Icon className="h-4 w-4 mr-2" />
                     <span className="hidden sm:inline">{role.title}</span>
@@ -159,42 +166,44 @@ export function AboutSection() {
             {roles.map((role) => {
               const Icon = role.icon;
               return (
-                <TabsContent key={role.id} value={role.id} className="mt-8">
-                  <Card className="border-2 overflow-hidden">
+                <TabsContent key={role.id} value={role.id} className="mt-8 animate-fade-in-up">
+                  <Card className="border-2 overflow-hidden shadow-xl backdrop-blur-sm">
                     <div className="grid md:grid-cols-2 gap-0">
                       {/* Left: Visual */}
                       <div className={`bg-gradient-to-br ${role.color} p-8 md:p-12 flex items-center justify-center relative overflow-hidden`}>
-                        <div className="absolute inset-0 bg-grid-pattern opacity-10" />
+                        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:24px_24px] opacity-20" />
                         <div className="relative z-10 text-center space-y-6">
-                          <div className="inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30">
-                            <Icon className="h-10 w-10 text-white" />
+                          <div className="inline-flex h-24 w-24 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md border-2 border-white/30 shadow-2xl hover:scale-110 transition-transform duration-500">
+                            <Icon className="h-12 w-12 text-white" />
                           </div>
                           <div>
-                            <h4 className="text-2xl font-bold text-white mb-2">{role.title}</h4>
-                            <p className="text-white/80">{role.subtitle}</p>
+                            <h4 className="text-2xl sm:text-3xl font-bold text-white mb-2">{role.title}</h4>
+                            <p className="text-white/90 text-lg">{role.subtitle}</p>
                           </div>
                         </div>
                         {/* Decorative elements */}
-                        <div className="absolute -top-8 -right-8 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
-                        <div className="absolute -bottom-8 -left-8 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
+                        <div className="absolute -top-8 -right-8 w-32 h-32 bg-white/10 rounded-full blur-2xl animate-pulse" />
+                        <div className="absolute -bottom-8 -left-8 w-40 h-40 bg-white/10 rounded-full blur-2xl animate-pulse" style={{ animationDelay: "1s" }} />
                       </div>
 
                       {/* Right: Content */}
-                      <div className="p-8 md:p-12 space-y-6">
+                      <div className="p-8 md:p-12 space-y-6 bg-gradient-to-br from-background to-muted/20">
                         <div>
-                          <p className="text-lg text-muted-foreground leading-relaxed">
+                          <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed">
                             {role.description}
                           </p>
                         </div>
-                        <div className="space-y-4 pt-4">
-                          <h5 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">
-            ความสามารถหลัก
+                        <div className="space-y-5 pt-4">
+                          <h5 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground border-b border-border/50 pb-2">
+                            ความสามารถหลัก
                           </h5>
-                          <ul className="space-y-3">
+                          <ul className="space-y-4">
                             {role.features.map((feature, idx) => (
-                              <li key={idx} className="flex items-start gap-3">
-                                <ArrowRight className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                                <span className="text-muted-foreground">{feature}</span>
+                              <li key={idx} className="flex items-start gap-3 group">
+                                <ArrowRight className="h-5 w-5 text-primary mt-0.5 flex-shrink-0 group-hover:translate-x-1 transition-transform duration-300" />
+                                <span className="text-muted-foreground leading-relaxed group-hover:text-foreground transition-colors">
+                                  {feature}
+                                </span>
                               </li>
                             ))}
                           </ul>

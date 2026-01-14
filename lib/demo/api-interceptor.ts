@@ -85,6 +85,10 @@ async function handleDemoAPI(url: string, init?: RequestInit): Promise<Response>
 
   // Companies
   if (pathname === "/api/companies" || pathname.startsWith("/api/companies/")) {
+    // Check for public endpoint first
+    if (pathname === "/api/companies/public") {
+      return handleCompaniesPublicAPI(url, method, init);
+    }
     return handleCompaniesAPI(pathname, method, init);
   }
 
@@ -98,6 +102,11 @@ async function handleDemoAPI(url: string, init?: RequestInit): Promise<Response>
     return handleJobPositionsAPI(pathname, method, init);
   }
 
+  // Public Jobs API
+  if (pathname === "/api/jobs/public") {
+    return handleJobsPublicAPI(url, method, init);
+  }
+
   // Universities
   if (pathname === "/api/universities" || pathname.startsWith("/api/universities/")) {
     return handleUniversitiesAPI(pathname, method, init);
@@ -105,7 +114,16 @@ async function handleDemoAPI(url: string, init?: RequestInit): Promise<Response>
 
   // Announcements
   if (pathname === "/api/announcements" || pathname.startsWith("/api/announcements/")) {
+    // Check for public endpoint first
+    if (pathname === "/api/announcements/public") {
+      return handleAnnouncementsPublicAPI(url, method, init);
+    }
     return handleAnnouncementsAPI(pathname, method, init);
+  }
+
+  // Public Statistics API
+  if (pathname === "/api/statistics/public") {
+    return handleStatisticsPublicAPI(url, method, init);
   }
 
   // Notifications
@@ -1133,6 +1151,276 @@ async function handleStudentPublicAPI(pathname: string, method: string, init?: R
   }
 
   return jsonResponse({ error: "Not found" }, 404);
+}
+
+// Jobs Public API
+async function handleJobsPublicAPI(url: string, method: string, init?: RequestInit): Promise<Response> {
+  if (method !== "GET") {
+    return jsonResponse({ error: "Method not allowed" }, 405);
+  }
+
+  const urlObj = new URL(url, window.location.origin);
+  const search = urlObj.searchParams.get("search");
+  const companyId = urlObj.searchParams.get("companyId");
+  const location = urlObj.searchParams.get("location");
+
+  const jobPositions = getEntity<JobPosition>(DEMO_STORAGE_KEYS.JOB_POSITIONS);
+  const companies = getEntity<Company>(DEMO_STORAGE_KEYS.COMPANIES);
+
+  // Filter active jobs only
+  let filteredJobs = jobPositions.filter((jp) => jp.isActive);
+
+  // Apply filters
+  if (search) {
+    const searchLower = search.toLowerCase();
+    filteredJobs = filteredJobs.filter(
+      (jp) =>
+        jp.title?.toLowerCase().includes(searchLower) ||
+        jp.description?.toLowerCase().includes(searchLower) ||
+        jp.location?.toLowerCase().includes(searchLower)
+    );
+  }
+
+  if (companyId) {
+    filteredJobs = filteredJobs.filter((jp) => jp.companyId === companyId);
+  }
+
+  if (location) {
+    const locationLower = location.toLowerCase();
+    filteredJobs = filteredJobs.filter((jp) => jp.location?.toLowerCase().includes(locationLower));
+  }
+
+  // Join with companies
+  const jobsWithCompanies = filteredJobs.map((job) => {
+    const company = companies.find((c) => c.id === job.companyId);
+    return {
+      id: job.id,
+      title: job.title,
+      description: job.description,
+      requirements: job.requirements,
+      location: job.location,
+      startDate: job.startDate,
+      endDate: job.endDate,
+      maxApplicants: job.maxApplicants,
+      createdAt: job.createdAt,
+      company: company
+        ? {
+            id: company.id,
+            name: company.name,
+            type: company.type,
+            activities: company.activities,
+          }
+        : null,
+    };
+  });
+
+  return jsonResponse(jobsWithCompanies);
+}
+
+// Companies Public API
+async function handleCompaniesPublicAPI(url: string, method: string, init?: RequestInit): Promise<Response> {
+  if (method !== "GET") {
+    return jsonResponse({ error: "Method not allowed" }, 405);
+  }
+
+  const urlObj = new URL(url, window.location.origin);
+  const search = urlObj.searchParams.get("search");
+  const type = urlObj.searchParams.get("type");
+
+  const companies = getEntity<Company>(DEMO_STORAGE_KEYS.COMPANIES);
+  const jobPositions = getEntity<JobPosition>(DEMO_STORAGE_KEYS.JOB_POSITIONS);
+
+  // Filter active companies only
+  let filteredCompanies = companies.filter((c) => c.isActive);
+
+  // Apply filters
+  if (search) {
+    const searchLower = search.toLowerCase();
+    filteredCompanies = filteredCompanies.filter(
+      (c) =>
+        c.name?.toLowerCase().includes(searchLower) ||
+        c.type?.toLowerCase().includes(searchLower) ||
+        c.activities?.toLowerCase().includes(searchLower)
+    );
+  }
+
+  if (type) {
+    const typeLower = type.toLowerCase();
+    filteredCompanies = filteredCompanies.filter((c) => c.type?.toLowerCase().includes(typeLower));
+  }
+
+  // Add active jobs count
+  const companiesWithJobs = filteredCompanies.map((company) => {
+    const activeJobsCount = jobPositions.filter(
+      (jp) => jp.companyId === company.id && jp.isActive
+    ).length;
+
+    return {
+      ...company,
+      activeJobsCount,
+    };
+  });
+
+  return jsonResponse(companiesWithJobs);
+}
+
+// Statistics Public API
+async function handleStatisticsPublicAPI(url: string, method: string, init?: RequestInit): Promise<Response> {
+  if (method !== "GET") {
+    return jsonResponse({ error: "Method not allowed" }, 405);
+  }
+
+  const students = getEntity<Student>(DEMO_STORAGE_KEYS.STUDENTS);
+  const companies = getEntity<Company>(DEMO_STORAGE_KEYS.COMPANIES);
+  const jobPositions = getEntity<JobPosition>(DEMO_STORAGE_KEYS.JOB_POSITIONS);
+  const internships = getEntity<Internship>(DEMO_STORAGE_KEYS.INTERNSHIPS);
+  const users = getEntity<User>(DEMO_STORAGE_KEYS.USERS);
+  const universities = getEntity<University>(DEMO_STORAGE_KEYS.UNIVERSITIES);
+
+  // Calculate statistics
+  const activeCompanies = companies.filter((c) => c.isActive);
+  const activeJobPositions = jobPositions.filter((jp) => jp.isActive);
+  const activeInternships = internships.filter((i) => i.status === "approved");
+  const completedInternships = internships.filter((i) => i.status === "completed");
+
+  // Internships by status
+  const internshipsByStatus = internships.reduce((acc, internship) => {
+    const status = internship.status || "unknown";
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  // Companies by type
+  const companiesByType = activeCompanies.reduce((acc, company) => {
+    const type = company.type || "unknown";
+    acc[type] = (acc[type] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  // Monthly stats (last 12 months)
+  const monthlyStats: Array<{ month: string; count: number }> = [];
+  const now = new Date();
+  for (let i = 11; i >= 0; i--) {
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    const count = internships.filter((i) => {
+      const createdAt = new Date(i.createdAt as any);
+      return (
+        createdAt.getFullYear() === date.getFullYear() &&
+        createdAt.getMonth() === date.getMonth()
+      );
+    }).length;
+    monthlyStats.push({ month, count });
+  }
+
+  // Stats by university
+  const statsByUniversity = students.reduce((acc, student) => {
+    const universityId = student.universityId || "unknown";
+    acc[universityId] = (acc[universityId] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  return jsonResponse({
+    overview: {
+      totalStudents: students.length,
+      totalCompanies: activeCompanies.length,
+      totalJobPositions: activeJobPositions.length,
+      totalInternships: internships.length,
+      activeInternships: activeInternships.length,
+      completedInternships: completedInternships.length,
+      totalUsers: users.length,
+      totalUniversities: universities.length,
+    },
+    internshipsByStatus: Object.entries(internshipsByStatus).map(([status, count]) => ({
+      status,
+      count,
+    })),
+    companiesByType: Object.entries(companiesByType)
+      .filter(([type]) => type !== "unknown")
+      .map(([type, count]) => ({
+        type,
+        count,
+      })),
+    monthlyStats,
+    statsByUniversity: Object.entries(statsByUniversity).map(([universityId, count]) => ({
+      universityId,
+      count,
+    })),
+  });
+}
+
+// Announcements Public API
+async function handleAnnouncementsPublicAPI(
+  url: string,
+  method: string,
+  init?: RequestInit
+): Promise<Response> {
+  if (method !== "GET") {
+    return jsonResponse({ error: "Method not allowed" }, 405);
+  }
+
+  const urlObj = new URL(url, window.location.origin);
+  const search = urlObj.searchParams.get("search");
+  const type = urlObj.searchParams.get("type");
+  const priority = urlObj.searchParams.get("priority");
+  const page = parseInt(urlObj.searchParams.get("page") || "1");
+  const limit = parseInt(urlObj.searchParams.get("limit") || "10");
+
+  let announcements = getEntity<Announcement>(DEMO_STORAGE_KEYS.ANNOUNCEMENTS);
+
+  // Filter active and public announcements (no target roles or empty target roles)
+  announcements = announcements.filter(
+    (a) =>
+      a.isActive &&
+      (!a.targetRoles || (Array.isArray(a.targetRoles) && a.targetRoles.length === 0))
+  );
+
+  // Filter by expiration
+  const now = new Date();
+  announcements = announcements.filter((a) => {
+    if (!a.expiresAt) return true;
+    return new Date(a.expiresAt as any) > now;
+  });
+
+  // Apply filters
+  if (search) {
+    const searchLower = search.toLowerCase();
+    announcements = announcements.filter(
+      (a) =>
+        a.title?.toLowerCase().includes(searchLower) ||
+        a.content?.toLowerCase().includes(searchLower)
+    );
+  }
+
+  if (type) {
+    announcements = announcements.filter((a) => a.type === type);
+  }
+
+  if (priority) {
+    announcements = announcements.filter((a) => a.priority === priority);
+  }
+
+  // Sort by createdAt descending
+  announcements.sort((a, b) => {
+    const dateA = new Date(a.createdAt as any).getTime();
+    const dateB = new Date(b.createdAt as any).getTime();
+    return dateB - dateA;
+  });
+
+  // Pagination
+  const total = announcements.length;
+  const offset = (page - 1) * limit;
+  const paginatedAnnouncements = announcements.slice(offset, offset + limit);
+
+  return jsonResponse({
+    announcements: paginatedAnnouncements,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  });
 }
 
 // Student Resumes Pending API

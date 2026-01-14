@@ -71,27 +71,31 @@ export function AdminDashboard() {
   const totalInternships = internshipStatus.reduce((sum, item) => sum + item.count, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <AnnouncementBanner />
       
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">ยินดีต้อนรับ, ผู้ดูแลระบบ</h2>
-        <p className="text-muted-foreground">ภาพรวมระบบจัดการการฝึกงานประจำวันนี้</p>
+      <div className="space-y-2">
+        <h2 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+          ยินดีต้อนรับ, ผู้ดูแลระบบ
+        </h2>
+        <p className="text-lg text-muted-foreground">ภาพรวมระบบจัดการการฝึกงานประจำวันนี้</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <Card key={stat.title}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-              <div className={`rounded-lg p-2 ${stat.bgColor}`}>
-                <stat.icon className={`h-4 w-4 ${stat.color}`} />
+          <Card key={stat.title} className="border-2 hover:shadow-xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 backdrop-blur-sm group">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
+              <div className={`rounded-xl p-3 ${stat.bgColor} group-hover:scale-110 transition-transform duration-300 shadow-md`}>
+                <stat.icon className={`h-5 w-5 ${stat.color}`} />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground">
-                <TrendingUp className="mr-1 inline h-3 w-3 text-green-500" />
+              <div className="text-3xl font-bold mb-2 bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                {stat.value}
+              </div>
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <TrendingUp className="h-3 w-3 text-green-500" />
                 {stat.change} จากเดือนที่แล้ว
               </p>
             </CardContent>
@@ -99,62 +103,72 @@ export function AdminDashboard() {
         ))}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>สถานะการฝึกงาน</CardTitle>
-            <CardDescription>ภาพรวมสถานะการฝึกงานทั้งหมด</CardDescription>
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card className="border-2 hover:shadow-xl transition-all duration-300 hover:scale-[1.01] backdrop-blur-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg">สถานะการฝึกงาน</CardTitle>
+            <CardDescription className="pt-1">ภาพรวมสถานะการฝึกงานทั้งหมด</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-5">
             {internshipStatus.map((status) => (
-              <div key={status.label} className="space-y-2">
+              <div key={status.label} className="space-y-3 p-4 rounded-lg border border-border/50 hover:bg-muted/30 transition-colors">
                 <div className="flex items-center justify-between text-sm">
-                  <span>{status.label}</span>
-                  <span className="font-medium">{status.count}</span>
+                  <div className="flex items-center gap-2">
+                    <div className={`h-3 w-3 rounded-full ${status.color} shadow-sm`} />
+                    <span className="font-medium">{status.label}</span>
+                  </div>
+                  <span className="font-bold text-lg">{status.count}</span>
                 </div>
                 <Progress
                   value={totalInternships > 0 ? (status.count / totalInternships) * 100 : 0}
-                  className="h-2"
+                  className="h-3 shadow-inner"
                 />
               </div>
             ))}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>กิจกรรมล่าสุด</CardTitle>
-            <CardDescription>การดำเนินการในระบบล่าสุด</CardDescription>
+        <Card className="border-2 hover:shadow-xl transition-all duration-300 hover:scale-[1.01] backdrop-blur-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg">กิจกรรมล่าสุด</CardTitle>
+            <CardDescription className="pt-1">การดำเนินการในระบบล่าสุด</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentActivities.map((activity) => (
-                <div key={activity.id} className="flex items-start gap-3">
-                  <div className="mt-0.5">
-                    {activity.status === "pending" && (
-                      <Clock className="h-4 w-4 text-yellow-500" />
-                    )}
-                    {activity.status === "approved" && (
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                    )}
-                    {activity.status === "new" && (
-                      <AlertCircle className="h-4 w-4 text-blue-500" />
-                    )}
-                    {activity.status === "updated" && (
-                      <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                    )}
+              {recentActivities.length > 0 ? (
+                recentActivities.map((activity) => (
+                  <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg border border-border/50 hover:bg-muted/30 transition-colors">
+                    <div className="mt-0.5 flex-shrink-0">
+                      {activity.status === "pending" && (
+                        <Clock className="h-5 w-5 text-yellow-500" />
+                      )}
+                      {activity.status === "approved" && (
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                      )}
+                      {activity.status === "new" && (
+                        <AlertCircle className="h-5 w-5 text-blue-500" />
+                      )}
+                      {activity.status === "updated" && (
+                        <TrendingUp className="h-5 w-5 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="flex-1 space-y-1 min-w-0">
+                      <p className="text-sm font-medium">{activity.action}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {activity.student !== "-" && activity.student}
+                        {activity.student !== "-" && activity.company !== "-" && " → "}
+                        {activity.company !== "-" && activity.company}
+                      </p>
+                    </div>
+                    <span className="text-xs text-muted-foreground flex-shrink-0">{activity.time}</span>
                   </div>
-                  <div className="flex-1 space-y-1">
-                    <p className="text-sm font-medium">{activity.action}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {activity.student !== "-" && activity.student}
-                      {activity.student !== "-" && activity.company !== "-" && " → "}
-                      {activity.company !== "-" && activity.company}
-                    </p>
-                  </div>
-                  <span className="text-xs text-muted-foreground">{activity.time}</span>
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <AlertCircle className="h-12 w-12 mx-auto mb-3 text-muted-foreground/30" />
+                  <p className="text-sm">ยังไม่มีกิจกรรมล่าสุด</p>
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>

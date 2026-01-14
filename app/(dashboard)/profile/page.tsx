@@ -793,8 +793,16 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <div className="h-8 w-64 bg-muted animate-pulse rounded-md" />
+          <div className="h-4 w-96 bg-muted animate-pulse rounded-md" />
+        </div>
+        <div className="grid gap-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-64 bg-muted animate-pulse rounded-lg" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -812,21 +820,23 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">ข้อมูลส่วนตัว</h2>
-        <p className="text-muted-foreground">จัดการข้อมูลส่วนตัวของคุณ</p>
+    <div className="space-y-8">
+      <div className="space-y-2">
+        <h2 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+          ข้อมูลส่วนตัว
+        </h2>
+        <p className="text-lg text-muted-foreground">จัดการข้อมูลส่วนตัวของคุณ</p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-6">
         {/* Personal Information Section */}
         <div>
-          <Card>
-            <CardHeader>
-              <CardTitle>ข้อมูลส่วนตัว</CardTitle>
-              <CardDescription>ข้อมูลพื้นฐานของคุณ</CardDescription>
+          <Card className="border-2 hover:shadow-xl transition-all duration-300 backdrop-blur-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg">ข้อมูลส่วนตัว</CardTitle>
+              <CardDescription className="pt-1">ข้อมูลพื้นฐานของคุณ</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               {/* Image Upload */}
               <div className="space-y-2">
                 <Label>รูปภาพ</Label>
@@ -954,12 +964,12 @@ export default function ProfilePage() {
 
         {/* Academic Information Section */}
         <div>
-          <Card>
-            <CardHeader>
-              <CardTitle>ข้อมูลการศึกษา</CardTitle>
-              <CardDescription>ข้อมูลทางการศึกษาของคุณ</CardDescription>
+          <Card className="border-2 hover:shadow-xl transition-all duration-300 backdrop-blur-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg">ข้อมูลการศึกษา</CardTitle>
+              <CardDescription className="pt-1">ข้อมูลทางการศึกษาของคุณ</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="program">สาขาวิชา</Label>
@@ -1023,7 +1033,7 @@ export default function ProfilePage() {
                   rows={5}
                 />
               </div>
-              <Button onClick={handleSave} disabled={isSaving}>
+              <Button onClick={handleSave} disabled={isSaving} className="hover:scale-105 transition-transform duration-300 shadow-lg">
                 {isSaving ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -1042,12 +1052,12 @@ export default function ProfilePage() {
 
         {/* Family Information Section */}
         <div>
-          <Card>
-            <CardHeader>
-              <CardTitle>ข้อมูลครอบครัว</CardTitle>
-              <CardDescription>ข้อมูลเกี่ยวกับครอบครัว</CardDescription>
+          <Card className="border-2 hover:shadow-xl transition-all duration-300 backdrop-blur-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg">ข้อมูลครอบครัว</CardTitle>
+              <CardDescription className="pt-1">ข้อมูลเกี่ยวกับครอบครัว</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="fatherName">ชื่อบิดา</Label>
@@ -1084,7 +1094,7 @@ export default function ProfilePage() {
                   />
                 </div>
               </div>
-              <Button onClick={handleSave} disabled={isSaving}>
+              <Button onClick={handleSave} disabled={isSaving} className="hover:scale-105 transition-transform duration-300 shadow-lg">
                 {isSaving ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -1103,12 +1113,12 @@ export default function ProfilePage() {
 
         {/* Address Section */}
         <div>
-          <Card>
-            <CardHeader>
-              <CardTitle>ที่อยู่ปัจจุบัน</CardTitle>
-              <CardDescription>ที่อยู่ปัจจุบันของคุณ</CardDescription>
+          <Card className="border-2 hover:shadow-xl transition-all duration-300 backdrop-blur-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg">ที่อยู่ปัจจุบัน</CardTitle>
+              <CardDescription className="pt-1">ที่อยู่ปัจจุบันของคุณ</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="present-addressLine">ที่อยู่</Label>
                 <Textarea
@@ -1192,7 +1202,7 @@ export default function ProfilePage() {
                   />
                 </div>
               </div>
-              <Button onClick={() => handleSaveAddress("present")} disabled={isSaving}>
+              <Button onClick={() => handleSaveAddress("present")} disabled={isSaving} className="hover:scale-105 transition-transform duration-300 shadow-lg">
                 {isSaving ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -1208,12 +1218,12 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>ที่อยู่ถาวร</CardTitle>
-              <CardDescription>ที่อยู่ถาวรของคุณ</CardDescription>
+          <Card className="border-2 hover:shadow-xl transition-all duration-300 backdrop-blur-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg">ที่อยู่ถาวร</CardTitle>
+              <CardDescription className="pt-1">ที่อยู่ถาวรของคุณ</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="permanent-addressLine">ที่อยู่</Label>
                 <Textarea
@@ -1297,7 +1307,7 @@ export default function ProfilePage() {
                   />
                 </div>
               </div>
-              <Button onClick={() => handleSaveAddress("permanent")} disabled={isSaving}>
+              <Button onClick={() => handleSaveAddress("permanent")} disabled={isSaving} className="hover:scale-105 transition-transform duration-300 shadow-lg">
                 {isSaving ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -1316,15 +1326,15 @@ export default function ProfilePage() {
 
         {/* Education History Section */}
         <div>
-          <Card>
-            <CardHeader>
-              <CardTitle>ประวัติการศึกษา</CardTitle>
-              <CardDescription>ประวัติการศึกษาของคุณ (สูงสุด 3 ระดับ)</CardDescription>
+          <Card className="border-2 hover:shadow-xl transition-all duration-300 backdrop-blur-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg">ประวัติการศึกษา</CardTitle>
+              <CardDescription className="pt-1">ประวัติการศึกษาของคุณ (สูงสุด 3 ระดับ)</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {educations.map((education, index) => (
-                <div key={index} className="space-y-4 p-4 border rounded-lg">
-                  <h4 className="font-medium">ระดับการศึกษา {index + 1}</h4>
+                <div key={index} className="space-y-4 p-6 border-2 border-border/50 rounded-lg hover:bg-muted/30 transition-colors">
+                  <h4 className="font-semibold text-base">ระดับการศึกษา {index + 1}</h4>
                   <div className="grid grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor={`education-${index}-level`}>ระดับการศึกษา</Label>
@@ -1372,7 +1382,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
               ))}
-              <Button onClick={handleSaveEducations} disabled={isSaving}>
+              <Button onClick={handleSaveEducations} disabled={isSaving} className="hover:scale-105 transition-transform duration-300 shadow-lg">
                 {isSaving ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -1391,12 +1401,12 @@ export default function ProfilePage() {
 
         {/* Contact Person Section */}
         <div>
-          <Card>
-            <CardHeader>
-              <CardTitle>บุคคลที่สามารถติดต่อได้</CardTitle>
-              <CardDescription>ข้อมูลผู้ติดต่อฉุกเฉิน</CardDescription>
+          <Card className="border-2 hover:shadow-xl transition-all duration-300 backdrop-blur-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg">บุคคลที่สามารถติดต่อได้</CardTitle>
+              <CardDescription className="pt-1">ข้อมูลผู้ติดต่อฉุกเฉิน</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="contactFirstName">ชื่อ *</Label>
@@ -1445,7 +1455,7 @@ export default function ProfilePage() {
 
               <div className="space-y-2">
                 <Label>ที่อยู่ผู้ติดต่อ</Label>
-                <div className="space-y-4 p-4 border rounded-lg">
+                <div className="space-y-4 p-6 border-2 border-border/50 rounded-lg bg-muted/20">
                   <div className="space-y-2">
                     <Label htmlFor="contact-addressLine">ที่อยู่</Label>
                     <Textarea
@@ -1569,7 +1579,7 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <Button onClick={handleSaveContactPerson} disabled={isSaving}>
+              <Button onClick={handleSaveContactPerson} disabled={isSaving} className="hover:scale-105 transition-transform duration-300 shadow-lg">
                 {isSaving ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -1587,13 +1597,13 @@ export default function ProfilePage() {
         </div>
 
         {/* Public Profile Sharing Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Card className="border-2 hover:shadow-xl transition-all duration-300 backdrop-blur-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <Share2 className="h-5 w-5" />
               แชร์โปรไฟล์
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="pt-1">
               สร้างลิงก์สาธารณะเพื่อแชร์โปรไฟล์ของคุณกับบริษัทหรือผู้อื่น
             </CardDescription>
           </CardHeader>

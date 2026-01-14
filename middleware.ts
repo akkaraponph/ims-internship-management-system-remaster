@@ -48,9 +48,17 @@ export async function middleware(request: NextRequest) {
     pathname.match(/\.(ico|png|jpg|jpeg|svg|webp)$/);
   const isLandingPage = pathname === "/";
   const isPublicProfile = pathname.startsWith("/profile/public/");
+  
+  // Public routes that don't require authentication
+  const isPublicRoute = 
+    pathname === "/jobs" ||
+    pathname.startsWith("/jobs/") ||
+    pathname.startsWith("/companies/public") ||
+    pathname === "/statistics" ||
+    pathname.startsWith("/announcements/public");
 
-  // Allow public assets, API routes, landing page, and public profile pages
-  if (isPublicAsset || isApiRoute || isLandingPage || isPublicProfile) {
+  // Allow public assets, API routes, landing page, public profile pages, and public routes
+  if (isPublicAsset || isApiRoute || isLandingPage || isPublicProfile || isPublicRoute) {
     return NextResponse.next();
   }
 

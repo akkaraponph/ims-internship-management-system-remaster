@@ -23,15 +23,18 @@ export function CTASection() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(120,119,198,0.15),transparent_70%)]" />
       
       <div className="container mx-auto relative z-10">
-        <Card className="border-2 overflow-hidden bg-gradient-to-br from-background to-muted/30 backdrop-blur-sm">
+        <Card className="border-2 overflow-hidden bg-gradient-to-br from-background to-muted/30 backdrop-blur-xl shadow-2xl">
           <div className="grid lg:grid-cols-2 gap-0">
             {/* Left Column - CTA Content */}
-            <div className="p-8 sm:p-12 lg:p-16 flex flex-col justify-center space-y-8 bg-gradient-to-br from-primary/5 to-transparent">
-              <div className="space-y-6">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
+            <div className="p-8 sm:p-12 lg:p-16 flex flex-col justify-center space-y-8 bg-gradient-to-br from-primary/5 via-primary/3 to-transparent relative overflow-hidden">
+              {/* Decorative elements */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+              <div className="space-y-6 relative z-10">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-sm shadow-lg">
                   <span className="text-sm font-medium text-primary">พร้อมเริ่มต้นแล้ว</span>
                 </div>
-                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight bg-gradient-to-r from-foreground via-foreground/90 to-foreground/70 bg-clip-text text-transparent">
                   พร้อมเริ่มต้นใช้งานแล้วหรือยัง?
                 </h2>
                 <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-xl">
@@ -77,11 +80,17 @@ export function CTASection() {
             </div>
 
             {/* Right Column - Statistics */}
-            <div className="p-8 sm:p-12 lg:p-16 bg-gradient-to-br from-muted/50 to-background flex items-center">
-              <div className="w-full space-y-8">
-                <div className="space-y-2">
-                  <h3 className="text-2xl font-bold">สถิติการใช้งาน</h3>
-                  <p className="text-muted-foreground">
+            <div className="p-8 sm:p-12 lg:p-16 bg-gradient-to-br from-muted/50 via-background to-background flex items-center relative overflow-hidden">
+              {/* Decorative elements */}
+              <div className="absolute top-0 left-0 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 -translate-x-1/2" />
+              <div className="absolute bottom-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl translate-y-1/2 translate-x-1/2" />
+              
+              <div className="w-full space-y-8 relative z-10">
+                <div className="space-y-3">
+                  <h3 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                    สถิติการใช้งาน
+                  </h3>
+                  <p className="text-muted-foreground leading-relaxed">
                     ตัวเลขที่แสดงถึงความน่าเชื่อถือของระบบ
                   </p>
                 </div>
@@ -92,16 +101,20 @@ export function CTASection() {
                     return (
                       <div
                         key={index}
-                        className="group relative p-6 rounded-xl border-2 border-border bg-card/50 hover:border-primary/50 hover:shadow-lg transition-all duration-300 hover:scale-105"
+                        className="group relative p-6 rounded-xl border-2 border-border/50 bg-card/50 backdrop-blur-sm hover:border-primary/50 hover:shadow-xl hover:shadow-primary/10 transition-all duration-500 hover:scale-105 hover:-translate-y-1"
                       >
-                        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl" />
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-xl" />
                         <div className="relative space-y-3">
-                          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors duration-300">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 shadow-md">
                             <Icon className="h-6 w-6" />
                           </div>
                           <div>
-                            <div className="text-2xl font-bold">{stat.value}</div>
-                            <div className="text-sm text-muted-foreground mt-1">{stat.label}</div>
+                            <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                              {stat.value}
+                            </div>
+                            <div className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                              {stat.label}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -110,14 +123,14 @@ export function CTASection() {
                 </div>
 
                 {/* Additional visual element */}
-                <div className="pt-6 border-t border-border">
+                <div className="pt-8 border-t border-border/50">
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <div className="flex -space-x-2">
-                      <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 border-2 border-background" />
-                      <div className="h-8 w-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 border-2 border-background" />
-                      <div className="h-8 w-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 border-2 border-background" />
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 border-2 border-background shadow-lg hover:scale-110 transition-transform duration-300" />
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 border-2 border-background shadow-lg hover:scale-110 transition-transform duration-300" />
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 border-2 border-background shadow-lg hover:scale-110 transition-transform duration-300" />
                     </div>
-                    <span>ผู้ใช้ที่เชื่อถือในระบบของเรา</span>
+                    <span className="font-medium">ผู้ใช้ที่เชื่อถือในระบบของเรา</span>
                   </div>
                 </div>
               </div>

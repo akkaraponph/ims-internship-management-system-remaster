@@ -84,19 +84,21 @@ export function BenefitsSection() {
         </div>
 
         {/* Header Cards */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
+        <div className="grid md:grid-cols-3 gap-6 mb-12">
           {benefits.map((benefit, index) => {
             const Icon = benefit.icon;
             return (
               <Card
                 key={index}
-                className={`border-2 ${benefit.bgColor} hover:shadow-xl transition-all duration-300 hover:scale-105`}
+                className={`group border-2 ${benefit.bgColor} hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 hover:scale-105 hover:-translate-y-2 backdrop-blur-sm`}
               >
-                <div className="p-6 text-center space-y-4">
-                  <div className={`inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br ${benefit.color} shadow-lg mx-auto`}>
-                    <Icon className="h-8 w-8 text-white" />
+                <div className="p-8 text-center space-y-5">
+                  <div className={`inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br ${benefit.color} shadow-xl mx-auto group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 border-2 border-white/20`}>
+                    <Icon className="h-10 w-10 text-white" />
                   </div>
-                  <h3 className="text-xl font-bold">{benefit.title}</h3>
+                  <h3 className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                    {benefit.title}
+                  </h3>
                 </div>
               </Card>
             );
@@ -104,15 +106,15 @@ export function BenefitsSection() {
         </div>
 
         {/* Comparison Table */}
-        <Card className="border-2 overflow-hidden">
+        <Card className="border-2 overflow-hidden shadow-xl backdrop-blur-sm">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="w-[200px] font-bold">คุณสมบัติ</TableHead>
+                <TableRow className="bg-gradient-to-r from-muted/50 to-muted/30 border-b-2 border-border">
+                  <TableHead className="w-[200px] font-bold text-base">คุณสมบัติ</TableHead>
                   {benefits.map((benefit, index) => (
                     <TableHead key={index} className="text-center">
-                      <div className="flex items-center justify-center gap-2">
+                      <div className="flex items-center justify-center gap-2 py-2">
                         <benefit.icon className={`h-5 w-5 ${benefit.iconColor}`} />
                         <span className="font-semibold">{benefit.title}</span>
                       </div>
@@ -124,19 +126,19 @@ export function BenefitsSection() {
                 {getAllUniqueFeatures().map((feature, featureIndex) => (
                   <TableRow
                     key={featureIndex}
-                    className="hover:bg-muted/30 transition-colors"
+                    className="hover:bg-muted/40 transition-colors border-b border-border/50"
                   >
-                    <TableCell className="font-medium">{feature}</TableCell>
+                    <TableCell className="font-medium py-4">{feature}</TableCell>
                     {benefits.map((benefit, benefitIndex) => {
                       const hasFeature = benefit.items.includes(feature);
                       return (
-                        <TableCell key={benefitIndex} className="text-center">
+                        <TableCell key={benefitIndex} className="text-center py-4">
                           {hasFeature ? (
                             <div className="flex items-center justify-center">
-                              <CheckCircle2 className={`h-5 w-5 ${benefit.iconColor}`} />
+                              <CheckCircle2 className={`h-6 w-6 ${benefit.iconColor} drop-shadow-sm`} />
                             </div>
                           ) : (
-                            <span className="text-muted-foreground">-</span>
+                            <span className="text-muted-foreground/50">-</span>
                           )}
                         </TableCell>
                       );
@@ -149,22 +151,23 @@ export function BenefitsSection() {
         </Card>
 
         {/* Additional Benefits Summary */}
-        <div className="mt-12 grid md:grid-cols-3 gap-6">
+        <div className="mt-16 grid md:grid-cols-3 gap-6">
           {benefits.map((benefit, index) => {
             const Icon = benefit.icon;
+            const borderColors = ['border-l-blue-500', 'border-l-purple-500', 'border-l-emerald-500'];
             return (
               <Card
                 key={index}
-                className={`border-l-4 border-l-transparent hover:border-l-primary transition-all duration-300 ${index === 0 ? 'border-l-blue-500' : index === 1 ? 'border-l-purple-500' : 'border-l-emerald-500'}`}
+                className={`group border-l-4 border-l-transparent hover:border-l-primary hover:shadow-xl transition-all duration-500 hover:scale-105 ${borderColors[index]} backdrop-blur-sm`}
               >
                 <div className="p-6 space-y-4">
                   <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${benefit.bgColor}`}>
-                      <Icon className={`h-5 w-5 ${benefit.iconColor}`} />
+                    <div className={`p-3 rounded-xl ${benefit.bgColor} group-hover:scale-110 transition-transform duration-300 shadow-md`}>
+                      <Icon className={`h-6 w-6 ${benefit.iconColor}`} />
                     </div>
-                    <h4 className="font-semibold">{benefit.title}</h4>
+                    <h4 className="font-semibold text-lg">{benefit.title}</h4>
                   </div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
                     {benefit.items.length} คุณสมบัติหลักที่ออกแบบมาเพื่อตอบสนองความต้องการของคุณ
                   </p>
                 </div>

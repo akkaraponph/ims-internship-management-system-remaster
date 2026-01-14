@@ -43,64 +43,74 @@ export function DirectorDashboard() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <AnnouncementBanner />
       
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">ยินดีต้อนรับ, อาจารย์ที่ปรึกษา</h2>
-        <p className="text-muted-foreground">ภาพรวมนักศึกษาในความดูแล</p>
+      <div className="space-y-2">
+        <h2 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+          ยินดีต้อนรับ, อาจารย์ที่ปรึกษา
+        </h2>
+        <p className="text-lg text-muted-foreground">ภาพรวมนักศึกษาในความดูแล</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">นักศึกษาในความดูแล</CardTitle>
-            <GraduationCap className="h-4 w-4 text-muted-foreground" />
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-2 hover:shadow-xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 backdrop-blur-sm group">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">นักศึกษาในความดูแล</CardTitle>
+            <div className="p-3 rounded-xl bg-muted group-hover:scale-110 transition-transform duration-300 shadow-md">
+              <GraduationCap className="h-5 w-5 text-muted-foreground" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-3xl font-bold mb-2 bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">0</div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">การฝึกงานที่รออนุมัติ</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-500" />
+        <Card className="border-2 hover:shadow-xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 backdrop-blur-sm group">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">การฝึกงานที่รออนุมัติ</CardTitle>
+            <div className="p-3 rounded-xl bg-yellow-500/10 group-hover:scale-110 transition-transform duration-300 shadow-md">
+              <Clock className="h-5 w-5 text-yellow-500" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-3xl font-bold mb-2 bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">0</div>
             <Link href="/director/internships/pending">
-              <Button variant="link" className="p-0 h-auto mt-2">
+              <Button variant="link" className="p-0 h-auto mt-2 hover:text-primary transition-colors">
                 ดูรายการ <ArrowRight className="ml-1 h-3 w-3" />
               </Button>
             </Link>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">การฝึกงานที่อนุมัติ</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
+        <Card className="border-2 hover:shadow-xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 backdrop-blur-sm group">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">การฝึกงานที่อนุมัติ</CardTitle>
+            <div className="p-3 rounded-xl bg-green-500/10 group-hover:scale-110 transition-transform duration-300 shadow-md">
+              <CheckCircle className="h-5 w-5 text-green-500" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-3xl font-bold mb-2 bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">0</div>
             <Link href="/director/internships/confirmed">
-              <Button variant="link" className="p-0 h-auto mt-2">
+              <Button variant="link" className="p-0 h-auto mt-2 hover:text-primary transition-colors">
                 ดูรายการ <ArrowRight className="ml-1 h-3 w-3" />
               </Button>
             </Link>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Resume รอการอนุมัติ</CardTitle>
-            <FileText className="h-4 w-4 text-yellow-500" />
+        <Card className="border-2 hover:shadow-xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 backdrop-blur-sm group">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Resume รอการอนุมัติ</CardTitle>
+            <div className="p-3 rounded-xl bg-yellow-500/10 group-hover:scale-110 transition-transform duration-300 shadow-md">
+              <FileText className="h-5 w-5 text-yellow-500" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{pendingResumesCount}</div>
+            <div className="text-3xl font-bold mb-2 bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">{pendingResumesCount}</div>
             <Link href="/director/resumes">
-              <Button variant="link" className="p-0 h-auto mt-2">
+              <Button variant="link" className="p-0 h-auto mt-2 hover:text-primary transition-colors">
                 ดูรายการ <ArrowRight className="ml-1 h-3 w-3" />
               </Button>
             </Link>
@@ -108,14 +118,15 @@ export function DirectorDashboard() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>นักศึกษาในความดูแล</CardTitle>
-          <CardDescription>รายชื่อนักศึกษาที่อยู่ในความดูแล</CardDescription>
+      <Card className="border-2 hover:shadow-xl transition-all duration-300 hover:scale-[1.01] backdrop-blur-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg">นักศึกษาในความดูแล</CardTitle>
+          <CardDescription className="pt-1">รายชื่อนักศึกษาที่อยู่ในความดูแล</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-center text-muted-foreground py-8">
-            ยังไม่มีข้อมูลนักศึกษา
+          <div className="text-center text-muted-foreground py-12">
+            <GraduationCap className="h-16 w-16 mx-auto mb-4 text-muted-foreground/30" />
+            <p className="text-sm">ยังไม่มีข้อมูลนักศึกษา</p>
           </div>
         </CardContent>
       </Card>
