@@ -12,6 +12,12 @@ export const DEMO_STORAGE_KEYS = {
   COMPANY_USERS: "demo_companyUsers",
   SELECTED_ROLE: "demo_selectedRole",
   ROLES: "demo_roles",
+  ADDRESSES: "demo_addresses",
+  EDUCATIONS: "demo_educations",
+  CONTACT_PERSONS: "demo_contactPersons",
+  EMAIL_SETTINGS: "demo_emailSettings",
+  EMAIL_TEMPLATES: "demo_emailTemplates",
+  BACKUPS: "demo_backups",
 } as const;
 
 export type DemoStorageKey = typeof DEMO_STORAGE_KEYS[keyof typeof DEMO_STORAGE_KEYS];

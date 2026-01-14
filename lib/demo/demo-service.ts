@@ -4,6 +4,10 @@ import { DEMO_STORAGE_KEYS, type DemoStorageKey } from "./storage-keys";
 import { generateMockData } from "./mock-data";
 import type { UserRole, User } from "@/types";
 
+function generateId(): string {
+  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
 export function isDemoMode(): boolean {
   if (typeof window === "undefined") return false;
   return localStorage.getItem(DEMO_STORAGE_KEYS.MODE) === "true";
@@ -35,6 +39,24 @@ export function enableDemoMode(role?: UserRole): void {
     localStorage.setItem(DEMO_STORAGE_KEYS.COMPANY_USERS, JSON.stringify(mockData.companyUsers));
     if (mockData.roles) {
       localStorage.setItem(DEMO_STORAGE_KEYS.ROLES, JSON.stringify(mockData.roles));
+    }
+    if (mockData.addresses) {
+      localStorage.setItem(DEMO_STORAGE_KEYS.ADDRESSES, JSON.stringify(mockData.addresses));
+    }
+    if (mockData.educations) {
+      localStorage.setItem(DEMO_STORAGE_KEYS.EDUCATIONS, JSON.stringify(mockData.educations));
+    }
+    if (mockData.contactPersons) {
+      localStorage.setItem(DEMO_STORAGE_KEYS.CONTACT_PERSONS, JSON.stringify(mockData.contactPersons));
+    }
+    if (mockData.emailSettings) {
+      localStorage.setItem(DEMO_STORAGE_KEYS.EMAIL_SETTINGS, JSON.stringify(mockData.emailSettings));
+    }
+    if (mockData.emailTemplates) {
+      localStorage.setItem(DEMO_STORAGE_KEYS.EMAIL_TEMPLATES, JSON.stringify(mockData.emailTemplates));
+    }
+    if (mockData.backups) {
+      localStorage.setItem(DEMO_STORAGE_KEYS.BACKUPS, JSON.stringify(mockData.backups));
     }
   }
 }
@@ -280,4 +302,202 @@ export function loginAsRole(role: UserRole): { success: boolean; session?: any; 
   setSelectedRole(role);
 
   return { success: true, session: sessionData };
+}
+
+// Export Demo Data
+export function exportDemoData(): string {
+  if (typeof window === "undefined") return "";
+  
+  const data: any = {};
+  Object.values(DEMO_STORAGE_KEYS).forEach((key) => {
+    if (key !== DEMO_STORAGE_KEYS.MODE && key !== DEMO_STORAGE_KEYS.SESSION && key !== DEMO_STORAGE_KEYS.SELECTED_ROLE) {
+      const value = localStorage.getItem(key);
+      if (value) {
+        data[key] = JSON.parse(value);
+      }
+    }
+  });
+  
+  return JSON.stringify(data, null, 2);
+}
+
+// Import Demo Data
+export function importDemoData(jsonData: string): { success: boolean; error?: string } {
+  if (typeof window === "undefined") {
+    return { success: false, error: "Not in browser environment" };
+  }
+  
+  try {
+    const data = JSON.parse(jsonData);
+    Object.keys(data).forEach((key) => {
+      if (Object.values(DEMO_STORAGE_KEYS).includes(key as any)) {
+        localStorage.setItem(key, JSON.stringify(data[key]));
+      }
+    });
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: "Invalid JSON data" };
+  }
+}
+
+// Load Preset
+export function loadPreset(presetName: "empty" | "full" | "realistic"): void {
+  if (typeof window === "undefined") return;
+  
+  const selectedRole = getSelectedRole();
+  
+  // Clear existing data
+  Object.values(DEMO_STORAGE_KEYS).forEach((key) => {
+    if (key !== DEMO_STORAGE_KEYS.MODE && key !== DEMO_STORAGE_KEYS.SELECTED_ROLE) {
+      localStorage.removeItem(key);
+    }
+  });
+  
+  if (presetName === "empty") {
+    // Empty state - minimal data
+    const mockData = generateMockData();
+    // Only keep universities and basic structure
+    localStorage.setItem(DEMO_STORAGE_KEYS.UNIVERSITIES, JSON.stringify(mockData.universities));
+    localStorage.setItem(DEMO_STORAGE_KEYS.USERS, JSON.stringify(mockData.users.slice(0, 3))); // Only admin users
+    localStorage.setItem(DEMO_STORAGE_KEYS.ROLES, JSON.stringify(mockData.roles || []));
+  } else if (presetName === "full") {
+    // Full state - maximum data
+    const mockData = generateMockData();
+    // Store all data
+    Object.keys(mockData).forEach((key) => {
+      const storageKey = `demo_${key}` as any;
+      if (Object.values(DEMO_STORAGE_KEYS).includes(storageKey)) {
+        localStorage.setItem(storageKey, JSON.stringify((mockData as any)[key]));
+      }
+    });
+    // Generate additional data
+    for (let i = 0; i < 50; i++) {
+      const student = {
+        id: generateId(),
+        userId: null,
+        universityId: mockData.universities[0].id,
+        email: `student${i}@example.com`,
+        idCard: `1234567890${i}`,
+        firstName: `Student${i}`,
+        lastName: `Last${i}`,
+        phone: `081234567${i}`,
+        program: "วิศวกรรมคอมพิวเตอร์",
+        department: "คณะวิศวกรรมศาสตร์",
+        skill: "Programming",
+        interest: "Software",
+        projectTopic: "Project",
+        dateOfBirth: new Date(2000, 0, 1).toISOString() as any,
+        experience: "Experience",
+        religion: "พุทธ",
+        fatherName: "Father",
+        fatherJob: "Job",
+        motherName: "Mother",
+        motherJob: "Job",
+        presentGpa: "3.5",
+        image: null,
+        resumeStatus: false,
+        isCoInternship: false,
+        presentAddressId: null,
+        permanentAddressId: null,
+        createdAt: new Date().toISOString() as any,
+        updatedAt: new Date().toISOString() as any,
+      };
+      const students = getEntity<any>(DEMO_STORAGE_KEYS.STUDENTS);
+      students.push(student);
+      setEntity(DEMO_STORAGE_KEYS.STUDENTS, students);
+    }
+  } else {
+    // Realistic state (default)
+    enableDemoMode(selectedRole || undefined);
+  }
+  
+  // Restore selected role
+  if (selectedRole) {
+    setSelectedRole(selectedRole);
+  }
+}
+
+// Quick Actions
+export function quickAction(actionName: string): { success: boolean; message?: string; error?: string } {
+  if (typeof window === "undefined") {
+    return { success: false, error: "Not in browser environment" };
+  }
+  
+  try {
+    switch (actionName) {
+      case "create-sample-internship": {
+        const students = getEntity<any>(DEMO_STORAGE_KEYS.STUDENTS);
+        const jobPositions = getEntity<any>(DEMO_STORAGE_KEYS.JOB_POSITIONS);
+        const companies = getEntity<any>(DEMO_STORAGE_KEYS.COMPANIES);
+        
+        if (students.length === 0 || jobPositions.length === 0) {
+          return { success: false, error: "No students or job positions available" };
+        }
+        
+        const student = students[0];
+        const jobPosition = jobPositions[0];
+        const company = companies.find((c: any) => c.id === jobPosition.companyId);
+        
+        if (!company) {
+          return { success: false, error: "Company not found" };
+        }
+        
+        const newInternship = {
+          id: generateId(),
+          studentId: student.id,
+          companyId: company.id,
+          jobPositionId: jobPosition.id,
+          isSend: "no",
+          isConfirm: "no",
+          status: "pending",
+          startDate: null,
+          endDate: null,
+          createdAt: new Date().toISOString() as any,
+          updatedAt: new Date().toISOString() as any,
+        };
+        
+        addEntity(DEMO_STORAGE_KEYS.INTERNSHIPS, newInternship);
+        return { success: true, message: "Sample internship created successfully" };
+      }
+      
+      case "approve-all-pending": {
+        const internships = getEntity<any>(DEMO_STORAGE_KEYS.INTERNSHIPS);
+        const pending = internships.filter((i: any) => i.status === "pending");
+        
+        pending.forEach((internship: any) => {
+          updateEntity(DEMO_STORAGE_KEYS.INTERNSHIPS, internship.id, {
+            status: "approved",
+            isConfirm: "yes",
+            updatedAt: new Date().toISOString() as any,
+          });
+        });
+        
+        return { success: true, message: `Approved ${pending.length} pending internships` };
+      }
+      
+      case "generate-test-data": {
+        const mockData = generateMockData();
+        // Add more students
+        const existingStudents = getEntity<any>(DEMO_STORAGE_KEYS.STUDENTS);
+        const newStudents = mockData.students.slice(0, 5);
+        setEntity(DEMO_STORAGE_KEYS.STUDENTS, [...existingStudents, ...newStudents]);
+        
+        // Add more companies
+        const existingCompanies = getEntity<any>(DEMO_STORAGE_KEYS.COMPANIES);
+        const newCompanies = mockData.companies.slice(0, 3);
+        setEntity(DEMO_STORAGE_KEYS.COMPANIES, [...existingCompanies, ...newCompanies]);
+        
+        return { success: true, message: "Test data generated successfully" };
+      }
+      
+      default:
+        return { success: false, error: `Unknown action: ${actionName}` };
+    }
+  } catch (error: any) {
+    return { success: false, error: error.message || "Unknown error" };
+  }
+}
+
+function generateId(): string {
+  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }

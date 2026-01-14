@@ -395,6 +395,161 @@ export function generateMockData() {
     }
   });
 
+  // Generate Addresses (Provinces, Districts, Sub-districts)
+  const provincesData = [
+    { id: "province-1", name: "กรุงเทพมหานคร", code: "10", type: "province" },
+    { id: "province-2", name: "นนทบุรี", code: "12", type: "province" },
+    { id: "province-3", name: "ปทุมธานี", code: "13", type: "province" },
+  ];
+
+  const districtsData = [
+    { id: "district-1", name: "เขตจตุจักร", code: "1001", provinceId: "province-1", type: "district" },
+    { id: "district-2", name: "เขตบางรัก", code: "1002", provinceId: "province-1", type: "district" },
+    { id: "district-3", name: "อำเภอเมืองนนทบุรี", code: "1201", provinceId: "province-2", type: "district" },
+  ];
+
+  const subDistrictsData = [
+    { id: "subdistrict-1", name: "แขวงจตุจักร", code: "100101", districtId: "district-1", type: "sub-district" },
+    { id: "subdistrict-2", name: "แขวงลาดยาว", code: "100102", districtId: "district-1", type: "sub-district" },
+    { id: "subdistrict-3", name: "แขวงสีลม", code: "100201", districtId: "district-2", type: "sub-district" },
+  ];
+
+  // Generate Addresses for students and companies
+  const addresses: any[] = [
+    ...provincesData,
+    ...districtsData,
+    ...subDistrictsData,
+  ];
+
+  // Add addresses for students
+  students.forEach((student, index) => {
+    const addressId = generateId();
+    addresses.push({
+      id: addressId,
+      type: "address",
+      studentId: student.id,
+      provinceId: provincesData[index % provincesData.length].id,
+      districtId: districtsData[index % districtsData.length].id,
+      subDistrictId: subDistrictsData[index % subDistrictsData.length].id,
+      addressLine: `123/45 ถนนตัวอย่าง ${index + 1}`,
+      postalCode: `1000${index}`,
+      createdAt: new Date("2024-01-01").toISOString() as any,
+      updatedAt: new Date("2024-01-01").toISOString() as any,
+    });
+    if (index === 0) {
+      student.presentAddressId = addressId;
+    } else if (index === 1) {
+      student.permanentAddressId = addressId;
+    }
+  });
+
+  // Add addresses for companies
+  companies.forEach((company, index) => {
+    const addressId = generateId();
+    addresses.push({
+      id: addressId,
+      type: "address",
+      companyId: company.id,
+      provinceId: provincesData[index % provincesData.length].id,
+      districtId: districtsData[index % districtsData.length].id,
+      subDistrictId: subDistrictsData[index % subDistrictsData.length].id,
+      addressLine: `456/78 ถนนบริษัท ${index + 1}`,
+      postalCode: `2000${index}`,
+      createdAt: new Date("2024-01-01").toISOString() as any,
+      updatedAt: new Date("2024-01-01").toISOString() as any,
+    });
+    company.addressId = addressId;
+  });
+
+  // Generate Educations
+  const educations: any[] = students.map((student, index) => ({
+    id: generateId(),
+    studentId: student.id,
+    level: "ปริญญาตรี",
+    institution: `มหาวิทยาลัยตัวอย่าง ${index + 1}`,
+    field: "วิศวกรรมคอมพิวเตอร์",
+    startDate: new Date(2020, 0, 1).toISOString() as any,
+    endDate: new Date(2024, 5, 30).toISOString() as any,
+    gpa: (3.0 + (index % 2) * 0.5).toFixed(2),
+    createdAt: new Date("2024-01-01").toISOString() as any,
+    updatedAt: new Date("2024-01-01").toISOString() as any,
+  }));
+
+  // Generate Contact Persons
+  const contactPersons: any[] = students.slice(0, 5).map((student) => ({
+    id: generateId(),
+    studentId: student.id,
+    name: `ผู้ติดต่อ ${student.firstName}`,
+    relationship: "เพื่อน",
+    phone: `081234567${students.indexOf(student)}`,
+    email: `contact${students.indexOf(student)}@example.com`,
+    address: "ที่อยู่ผู้ติดต่อ",
+    createdAt: new Date("2024-01-01").toISOString() as any,
+    updatedAt: new Date("2024-01-01").toISOString() as any,
+  }));
+
+  // Generate Email Settings
+  const emailSettings: any[] = [
+    {
+      id: generateId(),
+      smtpHost: "smtp.demo.example.com",
+      smtpPort: 587,
+      smtpUser: "demo@example.com",
+      smtpPassword: "demo-password",
+      fromEmail: "noreply@demo.example.com",
+      fromName: "Demo System",
+      isActive: true,
+      createdAt: new Date("2024-01-01").toISOString() as any,
+      updatedAt: new Date("2024-01-01").toISOString() as any,
+    },
+  ];
+
+  // Generate Email Templates
+  const emailTemplates: any[] = [
+    {
+      id: generateId(),
+      name: "Welcome Email",
+      subject: "ยินดีต้อนรับสู่ระบบ",
+      body: "<p>สวัสดี {{name}}, ยินดีต้อนรับสู่ระบบจัดการการฝึกงาน</p>",
+      type: "welcome",
+      isActive: true,
+      createdAt: new Date("2024-01-01").toISOString() as any,
+      updatedAt: new Date("2024-01-01").toISOString() as any,
+    },
+    {
+      id: generateId(),
+      name: "Internship Approval",
+      subject: "การฝึกงานของคุณได้รับการอนุมัติ",
+      body: "<p>สวัสดี {{name}}, การฝึกงานของคุณได้รับการอนุมัติแล้ว</p>",
+      type: "internship_approval",
+      isActive: true,
+      createdAt: new Date("2024-01-01").toISOString() as any,
+      updatedAt: new Date("2024-01-01").toISOString() as any,
+    },
+  ];
+
+  // Generate Backups
+  const backups: any[] = [
+    {
+      id: generateId(),
+      name: "Backup 2024-01-15",
+      description: "Full system backup",
+      size: 1024000,
+      status: "completed",
+      createdAt: new Date("2024-01-15").toISOString() as any,
+      updatedAt: new Date("2024-01-15").toISOString() as any,
+    },
+    {
+      id: generateId(),
+      name: "Backup 2024-02-01",
+      description: "Incremental backup",
+      size: 512000,
+      status: "completed",
+      createdAt: new Date("2024-02-01").toISOString() as any,
+      updatedAt: new Date("2024-02-01").toISOString() as any,
+    },
+  ];
+
   return {
     universities,
     users,
@@ -406,5 +561,11 @@ export function generateMockData() {
     notifications,
     companyUsers,
     roles,
+    addresses,
+    educations,
+    contactPersons,
+    emailSettings,
+    emailTemplates,
+    backups,
   };
 }

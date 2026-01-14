@@ -118,6 +118,82 @@ async function handleDemoAPI(url: string, init?: RequestInit): Promise<Response>
     return handleReportsAPI();
   }
 
+  // Addresses
+  if (pathname.startsWith("/api/addresses")) {
+    return handleAddressesAPI(pathname, method, init, url);
+  }
+
+  // Roles
+  if (pathname.startsWith("/api/roles")) {
+    return handleRolesAPI(pathname, method, init);
+  }
+
+  // Company Users
+  if (pathname.startsWith("/api/companies/") && pathname.includes("/users")) {
+    return handleCompanyUsersAPI(pathname, method, init);
+  }
+
+  // Student-specific APIs
+  if (pathname.startsWith("/api/students/") && pathname.includes("/educations")) {
+    return handleStudentEducationsAPI(pathname, method, init);
+  }
+  if (pathname.startsWith("/api/students/") && pathname.includes("/resume")) {
+    return handleStudentResumeAPI(pathname, method, init);
+  }
+  if (pathname.startsWith("/api/students/") && pathname.includes("/contact-person")) {
+    return handleStudentContactPersonAPI(pathname, method, init);
+  }
+  if (pathname.startsWith("/api/students/") && pathname.includes("/profile/token")) {
+    return handleStudentProfileTokenAPI(pathname, method, init);
+  }
+  if (pathname.startsWith("/api/students/public/")) {
+    return handleStudentPublicAPI(pathname, method, init);
+  }
+  if (pathname === "/api/students/resumes/pending") {
+    return handleStudentResumesPendingAPI(method, init);
+  }
+
+  // Internship-specific APIs
+  if (pathname.startsWith("/api/internships/") && (pathname.includes("/confirm") || pathname.includes("/unconfirm") || pathname.includes("/send") || pathname.includes("/unsend") || pathname.includes("/return") || pathname.includes("/detail"))) {
+    return handleInternshipActionsAPI(pathname, method, init);
+  }
+  if (pathname === "/api/internships/co-students") {
+    return handleInternshipCoStudentsAPI(method, init);
+  }
+
+  // Upload APIs
+  if (pathname.startsWith("/api/upload")) {
+    return handleUploadAPI(pathname, method, init);
+  }
+
+  // Email APIs
+  if (pathname.startsWith("/api/email")) {
+    return handleEmailAPI(pathname, method, init);
+  }
+
+  // Backup APIs
+  if (pathname.startsWith("/api/backups")) {
+    return handleBackupAPI(pathname, method, init);
+  }
+
+  // Announcement-specific APIs
+  if (pathname.startsWith("/api/announcements/") && (pathname.includes("/read") || pathname === "/api/announcements/unread")) {
+    return handleAnnouncementActionsAPI(pathname, method, init);
+  }
+
+  // University-specific APIs
+  if (pathname.startsWith("/api/universities/") && pathname.includes("/regenerate-invite")) {
+    return handleUniversityRegenerateInviteAPI(pathname, method, init);
+  }
+  if (pathname === "/api/universities/validate-invite") {
+    return handleUniversityValidateInviteAPI(method, init);
+  }
+
+  // Notification Settings
+  if (pathname === "/api/notifications/settings") {
+    return handleNotificationSettingsAPI(method, init);
+  }
+
   // Default 404
   return new Response(JSON.stringify({ error: "Not found" }), {
     status: 404,
@@ -706,6 +782,744 @@ async function handleReportsAPI(): Promise<Response> {
     approvedInternships: internships.filter((i) => i.status === "approved").length,
     rejectedInternships: internships.filter((i) => i.status === "rejected").length,
   });
+}
+
+// Addresses API
+async function handleAddressesAPI(pathname: string, method: string, init?: RequestInit, url?: string): Promise<Response> {
+  const session = getSession();
+  if (!session) return jsonResponse({ error: "Unauthorized" }, 401);
+
+  // Provinces
+  if (pathname === "/api/addresses/provinces" && method === "GET") {
+    const addresses = getEntity<any>(DEMO_STORAGE_KEYS.ADDRESSES);
+    const provinces = addresses.filter((a: any) => a.type === "province");
+    return jsonResponse(provinces);
+  }
+
+  // Districts
+  if (pathname === "/api/addresses/districts" && method === "GET") {
+    let provinceId: string | null = null;
+    if (url) {
+      const urlObj = new URL(url, window.location.origin);
+      provinceId = urlObj.searchParams.get("provinceId");
+    }
+    const addresses = getEntity<any>(DEMO_STORAGE_KEYS.ADDRESSES);
+    let districts = addresses.filter((a: any) => a.type === "district");
+    if (provinceId) {
+      districts = districts.filter((d: any) => d.provinceId === provinceId);
+    }
+    return jsonResponse(districts);
+  }
+
+  // Sub-districts
+  if (pathname === "/api/addresses/sub-districts" && method === "GET") {
+    let districtId: string | null = null;
+    if (url) {
+      const urlObj = new URL(url, window.location.origin);
+      districtId = urlObj.searchParams.get("districtId");
+    }
+    const addresses = getEntity<any>(DEMO_STORAGE_KEYS.ADDRESSES);
+    let subDistricts = addresses.filter((a: any) => a.type === "sub-district");
+    if (districtId) {
+      subDistricts = subDistricts.filter((sd: any) => sd.districtId === districtId);
+    }
+    return jsonResponse(subDistricts);
+  }
+
+  // Main addresses endpoint
+  if (pathname === "/api/addresses") {
+    if (method === "GET") {
+      const addresses = getEntity<any>(DEMO_STORAGE_KEYS.ADDRESSES);
+      return jsonResponse(addresses.filter((a: any) => a.type === "address"));
+    }
+    if (method === "POST") {
+      const body = await parseBody(init);
+      const newAddress: any = {
+        id: generateId(),
+        ...body,
+        createdAt: new Date().toISOString() as any,
+        updatedAt: new Date().toISOString() as any,
+      };
+      addEntity(DEMO_STORAGE_KEYS.ADDRESSES, newAddress);
+      return jsonResponse(newAddress, 201);
+    }
+  }
+
+  // Address by ID
+  const match = pathname.match(/^\/api\/addresses\/([^/]+)$/);
+  if (match) {
+    const id = match[1];
+    if (method === "GET") {
+      const address = getEntityById<any>(DEMO_STORAGE_KEYS.ADDRESSES, id);
+      if (!address) return jsonResponse({ error: "Not found" }, 404);
+      return jsonResponse(address);
+    }
+    if (method === "PATCH") {
+      const body = await parseBody(init);
+      const updateData = {
+        ...body,
+        updatedAt: new Date().toISOString() as any,
+      };
+      const updated = updateEntity<any>(DEMO_STORAGE_KEYS.ADDRESSES, id, updateData);
+      if (!updated) return jsonResponse({ error: "Not found" }, 404);
+      return jsonResponse(updated);
+    }
+    if (method === "DELETE") {
+      const deleted = deleteEntity(DEMO_STORAGE_KEYS.ADDRESSES, id);
+      if (!deleted) return jsonResponse({ error: "Not found" }, 404);
+      return jsonResponse({ message: "Deleted successfully" });
+    }
+  }
+
+  return jsonResponse({ error: "Not found" }, 404);
+}
+
+// Roles API
+async function handleRolesAPI(pathname: string, method: string, init?: RequestInit): Promise<Response> {
+  const session = getSession();
+  if (!session || (session.role !== "admin" && session.role !== "super-admin")) {
+    return jsonResponse({ error: "Unauthorized" }, 401);
+  }
+
+  if (pathname === "/api/roles") {
+    if (method === "GET") {
+      const roles = getEntity<any>(DEMO_STORAGE_KEYS.ROLES);
+      return jsonResponse(roles);
+    }
+    if (method === "POST") {
+      const body = await parseBody(init);
+      const newRole: any = {
+        id: generateId(),
+        ...body,
+        isSystemRole: false,
+        createdAt: new Date().toISOString() as any,
+        updatedAt: new Date().toISOString() as any,
+      };
+      addEntity(DEMO_STORAGE_KEYS.ROLES, newRole);
+      return jsonResponse(newRole, 201);
+    }
+  }
+
+  // Role by ID
+  const match = pathname.match(/^\/api\/roles\/([^/]+)$/);
+  if (match) {
+    const id = match[1];
+    if (method === "GET") {
+      const role = getEntityById<any>(DEMO_STORAGE_KEYS.ROLES, id);
+      if (!role) return jsonResponse({ error: "Not found" }, 404);
+      return jsonResponse(role);
+    }
+    if (method === "PATCH") {
+      const body = await parseBody(init);
+      const updateData = {
+        ...body,
+        updatedAt: new Date().toISOString() as any,
+      };
+      const updated = updateEntity<any>(DEMO_STORAGE_KEYS.ROLES, id, updateData);
+      if (!updated) return jsonResponse({ error: "Not found" }, 404);
+      return jsonResponse(updated);
+    }
+    if (method === "DELETE") {
+      const deleted = deleteEntity(DEMO_STORAGE_KEYS.ROLES, id);
+      if (!deleted) return jsonResponse({ error: "Not found" }, 404);
+      return jsonResponse({ message: "Deleted successfully" });
+    }
+  }
+
+  // Role permissions
+  const permissionsMatch = pathname.match(/^\/api\/roles\/([^/]+)\/permissions$/);
+  if (permissionsMatch) {
+    const id = permissionsMatch[1];
+    if (method === "GET") {
+      const role = getEntityById<any>(DEMO_STORAGE_KEYS.ROLES, id);
+      if (!role) return jsonResponse({ error: "Not found" }, 404);
+      return jsonResponse({ permissions: role.permissions || [] });
+    }
+    if (method === "PATCH") {
+      const body = await parseBody(init);
+      const role = getEntityById<any>(DEMO_STORAGE_KEYS.ROLES, id);
+      if (!role) return jsonResponse({ error: "Not found" }, 404);
+      const updated = updateEntity<any>(DEMO_STORAGE_KEYS.ROLES, id, {
+        permissions: body.permissions,
+        updatedAt: new Date().toISOString() as any,
+      });
+      return jsonResponse(updated);
+    }
+  }
+
+  return jsonResponse({ error: "Not found" }, 404);
+}
+
+// Company Users API
+async function handleCompanyUsersAPI(pathname: string, method: string, init?: RequestInit): Promise<Response> {
+  const session = getSession();
+  if (!session) return jsonResponse({ error: "Unauthorized" }, 401);
+
+  const companyUsersMatch = pathname.match(/^\/api\/companies\/([^/]+)\/users$/);
+  if (companyUsersMatch) {
+    const companyId = companyUsersMatch[1];
+    if (method === "GET") {
+      const companyUsers = getEntity<CompanyUser>(DEMO_STORAGE_KEYS.COMPANY_USERS);
+      const filtered = companyUsers.filter((cu) => cu.companyId === companyId);
+      return jsonResponse(filtered);
+    }
+    if (method === "POST") {
+      const body = await parseBody(init);
+      const newCompanyUser: CompanyUser = {
+        id: generateId(),
+        userId: body.userId,
+        companyId: companyId,
+        position: body.position || "Staff",
+        isPrimary: body.isPrimary || false,
+        createdAt: new Date().toISOString() as any,
+        updatedAt: new Date().toISOString() as any,
+      };
+      addEntity(DEMO_STORAGE_KEYS.COMPANY_USERS, newCompanyUser);
+      return jsonResponse(newCompanyUser, 201);
+    }
+  }
+
+  const userMatch = pathname.match(/^\/api\/companies\/([^/]+)\/users\/([^/]+)$/);
+  if (userMatch) {
+    const companyId = userMatch[1];
+    const userId = userMatch[2];
+    if (method === "GET") {
+      const companyUsers = getEntity<CompanyUser>(DEMO_STORAGE_KEYS.COMPANY_USERS);
+      const companyUser = companyUsers.find((cu) => cu.companyId === companyId && cu.userId === userId);
+      if (!companyUser) return jsonResponse({ error: "Not found" }, 404);
+      return jsonResponse(companyUser);
+    }
+    if (method === "PATCH") {
+      const body = await parseBody(init);
+      const companyUsers = getEntity<CompanyUser>(DEMO_STORAGE_KEYS.COMPANY_USERS);
+      const index = companyUsers.findIndex((cu) => cu.companyId === companyId && cu.userId === userId);
+      if (index === -1) return jsonResponse({ error: "Not found" }, 404);
+      companyUsers[index] = { ...companyUsers[index], ...body, updatedAt: new Date().toISOString() as any };
+      setEntity(DEMO_STORAGE_KEYS.COMPANY_USERS, companyUsers);
+      return jsonResponse(companyUsers[index]);
+    }
+    if (method === "DELETE") {
+      const companyUsers = getEntity<CompanyUser>(DEMO_STORAGE_KEYS.COMPANY_USERS);
+      const filtered = companyUsers.filter((cu) => !(cu.companyId === companyId && cu.userId === userId));
+      if (filtered.length === companyUsers.length) return jsonResponse({ error: "Not found" }, 404);
+      setEntity(DEMO_STORAGE_KEYS.COMPANY_USERS, filtered);
+      return jsonResponse({ message: "Deleted successfully" });
+    }
+  }
+
+  return jsonResponse({ error: "Not found" }, 404);
+}
+
+// Student Educations API
+async function handleStudentEducationsAPI(pathname: string, method: string, init?: RequestInit): Promise<Response> {
+  const session = getSession();
+  if (!session) return jsonResponse({ error: "Unauthorized" }, 401);
+
+  const match = pathname.match(/^\/api\/students\/([^/]+)\/educations$/);
+  if (match) {
+    const studentId = match[1];
+    if (method === "GET") {
+      const educations = getEntity<any>(DEMO_STORAGE_KEYS.EDUCATIONS);
+      return jsonResponse(educations.filter((e: any) => e.studentId === studentId));
+    }
+    if (method === "POST") {
+      const body = await parseBody(init);
+      const newEducation: any = {
+        id: generateId(),
+        studentId: studentId,
+        ...body,
+        createdAt: new Date().toISOString() as any,
+        updatedAt: new Date().toISOString() as any,
+      };
+      addEntity(DEMO_STORAGE_KEYS.EDUCATIONS, newEducation);
+      return jsonResponse(newEducation, 201);
+    }
+  }
+
+  return jsonResponse({ error: "Not found" }, 404);
+}
+
+// Student Resume API
+async function handleStudentResumeAPI(pathname: string, method: string, init?: RequestInit): Promise<Response> {
+  const session = getSession();
+  if (!session) return jsonResponse({ error: "Unauthorized" }, 401);
+
+  // Approve resume
+  const approveMatch = pathname.match(/^\/api\/students\/([^/]+)\/resume\/approve$/);
+  if (approveMatch && method === "POST") {
+    const studentId = approveMatch[1];
+    const student = getEntityById<Student>(DEMO_STORAGE_KEYS.STUDENTS, studentId);
+    if (!student) return jsonResponse({ error: "Not found" }, 404);
+    const updated = updateEntity<Student>(DEMO_STORAGE_KEYS.STUDENTS, studentId, { resumeStatus: true });
+    return jsonResponse(updated);
+  }
+
+  // Reject resume
+  const rejectMatch = pathname.match(/^\/api\/students\/([^/]+)\/resume\/reject$/);
+  if (rejectMatch && method === "POST") {
+    const studentId = rejectMatch[1];
+    const student = getEntityById<Student>(DEMO_STORAGE_KEYS.STUDENTS, studentId);
+    if (!student) return jsonResponse({ error: "Not found" }, 404);
+    const updated = updateEntity<Student>(DEMO_STORAGE_KEYS.STUDENTS, studentId, { resumeStatus: false });
+    return jsonResponse(updated);
+  }
+
+  return jsonResponse({ error: "Not found" }, 404);
+}
+
+// Student Contact Person API
+async function handleStudentContactPersonAPI(pathname: string, method: string, init?: RequestInit): Promise<Response> {
+  const session = getSession();
+  if (!session) return jsonResponse({ error: "Unauthorized" }, 401);
+
+  const match = pathname.match(/^\/api\/students\/([^/]+)\/contact-person$/);
+  if (match) {
+    const studentId = match[1];
+    const contactPersons = getEntity<any>(DEMO_STORAGE_KEYS.CONTACT_PERSONS);
+    const contactPerson = contactPersons.find((cp: any) => cp.studentId === studentId);
+
+    if (method === "GET") {
+      return jsonResponse(contactPerson || null);
+    }
+    if (method === "POST") {
+      const body = await parseBody(init);
+      const newContactPerson: any = {
+        id: generateId(),
+        studentId: studentId,
+        ...body,
+        createdAt: new Date().toISOString() as any,
+        updatedAt: new Date().toISOString() as any,
+      };
+      addEntity(DEMO_STORAGE_KEYS.CONTACT_PERSONS, newContactPerson);
+      return jsonResponse(newContactPerson, 201);
+    }
+    if (method === "PATCH") {
+      const body = await parseBody(init);
+      if (!contactPerson) return jsonResponse({ error: "Not found" }, 404);
+      const updated = updateEntity<any>(DEMO_STORAGE_KEYS.CONTACT_PERSONS, contactPerson.id, {
+        ...body,
+        updatedAt: new Date().toISOString() as any,
+      });
+      return jsonResponse(updated);
+    }
+  }
+
+  return jsonResponse({ error: "Not found" }, 404);
+}
+
+// Student Profile Token API
+async function handleStudentProfileTokenAPI(pathname: string, method: string, init?: RequestInit): Promise<Response> {
+  const session = getSession();
+  if (!session) return jsonResponse({ error: "Unauthorized" }, 401);
+
+  const match = pathname.match(/^\/api\/students\/([^/]+)\/profile\/token$/);
+  if (match && method === "GET") {
+    const studentId = match[1];
+    const token = `demo-token-${studentId}-${Date.now()}`;
+    return jsonResponse({ token });
+  }
+
+  return jsonResponse({ error: "Not found" }, 404);
+}
+
+// Student Public API
+async function handleStudentPublicAPI(pathname: string, method: string, init?: RequestInit): Promise<Response> {
+  const match = pathname.match(/^\/api\/students\/public\/([^/]+)$/);
+  if (match && method === "GET") {
+    const token = match[1];
+    // In demo mode, return a sample student
+    const students = getEntity<Student>(DEMO_STORAGE_KEYS.STUDENTS);
+    return jsonResponse(students[0] || null);
+  }
+
+  return jsonResponse({ error: "Not found" }, 404);
+}
+
+// Student Resumes Pending API
+async function handleStudentResumesPendingAPI(method: string, init?: RequestInit): Promise<Response> {
+  const session = getSession();
+  if (!session || (session.role !== "admin" && session.role !== "director")) {
+    return jsonResponse({ error: "Unauthorized" }, 401);
+  }
+
+  if (method === "GET") {
+    const students = getEntity<Student>(DEMO_STORAGE_KEYS.STUDENTS);
+    const pending = students.filter((s) => s.resumeStatus === false || s.resumeStatus === null);
+    return jsonResponse(pending);
+  }
+
+  return jsonResponse({ error: "Not found" }, 404);
+}
+
+// Internship Actions API
+async function handleInternshipActionsAPI(pathname: string, method: string, init?: RequestInit): Promise<Response> {
+  const session = getSession();
+  if (!session) return jsonResponse({ error: "Unauthorized" }, 401);
+
+  // Confirm
+  const confirmMatch = pathname.match(/^\/api\/internships\/([^/]+)\/confirm$/);
+  if (confirmMatch && method === "POST") {
+    const id = confirmMatch[1];
+    const updated = updateEntity<Internship>(DEMO_STORAGE_KEYS.INTERNSHIPS, id, {
+      isConfirm: "yes",
+      status: "approved",
+      updatedAt: new Date().toISOString() as any,
+    });
+    if (!updated) return jsonResponse({ error: "Not found" }, 404);
+    return jsonResponse(updated);
+  }
+
+  // Unconfirm
+  const unconfirmMatch = pathname.match(/^\/api\/internships\/([^/]+)\/unconfirm$/);
+  if (unconfirmMatch && method === "POST") {
+    const id = unconfirmMatch[1];
+    const updated = updateEntity<Internship>(DEMO_STORAGE_KEYS.INTERNSHIPS, id, {
+      isConfirm: "no",
+      updatedAt: new Date().toISOString() as any,
+    });
+    if (!updated) return jsonResponse({ error: "Not found" }, 404);
+    return jsonResponse(updated);
+  }
+
+  // Send
+  const sendMatch = pathname.match(/^\/api\/internships\/([^/]+)\/send$/);
+  if (sendMatch && method === "POST") {
+    const id = sendMatch[1];
+    const updated = updateEntity<Internship>(DEMO_STORAGE_KEYS.INTERNSHIPS, id, {
+      isSend: "yes",
+      updatedAt: new Date().toISOString() as any,
+    });
+    if (!updated) return jsonResponse({ error: "Not found" }, 404);
+    return jsonResponse(updated);
+  }
+
+  // Unsend
+  const unsendMatch = pathname.match(/^\/api\/internships\/([^/]+)\/unsend$/);
+  if (unsendMatch && method === "POST") {
+    const id = unsendMatch[1];
+    const updated = updateEntity<Internship>(DEMO_STORAGE_KEYS.INTERNSHIPS, id, {
+      isSend: "no",
+      updatedAt: new Date().toISOString() as any,
+    });
+    if (!updated) return jsonResponse({ error: "Not found" }, 404);
+    return jsonResponse(updated);
+  }
+
+  // Return
+  const returnMatch = pathname.match(/^\/api\/internships\/([^/]+)\/return$/);
+  if (returnMatch && method === "POST") {
+    const id = returnMatch[1];
+    const updated = updateEntity<Internship>(DEMO_STORAGE_KEYS.INTERNSHIPS, id, {
+      status: "pending",
+      isSend: "no",
+      updatedAt: new Date().toISOString() as any,
+    });
+    if (!updated) return jsonResponse({ error: "Not found" }, 404);
+    return jsonResponse(updated);
+  }
+
+  // Detail
+  const detailMatch = pathname.match(/^\/api\/internships\/([^/]+)\/detail$/);
+  if (detailMatch && method === "GET") {
+    const id = detailMatch[1];
+    const internship = getEntityById<Internship>(DEMO_STORAGE_KEYS.INTERNSHIPS, id);
+    if (!internship) return jsonResponse({ error: "Not found" }, 404);
+    // Return internship with related data
+    const students = getEntity<Student>(DEMO_STORAGE_KEYS.STUDENTS);
+    const companies = getEntity<Company>(DEMO_STORAGE_KEYS.COMPANIES);
+    const jobPositions = getEntity<JobPosition>(DEMO_STORAGE_KEYS.JOB_POSITIONS);
+    const student = students.find((s) => s.id === internship.studentId);
+    const company = companies.find((c) => c.id === internship.companyId);
+    const jobPosition = jobPositions.find((jp) => jp.id === internship.jobPositionId);
+    return jsonResponse({
+      ...internship,
+      student,
+      company,
+      jobPosition,
+    });
+  }
+
+  return jsonResponse({ error: "Not found" }, 404);
+}
+
+// Internship Co-Students API
+async function handleInternshipCoStudentsAPI(method: string, init?: RequestInit): Promise<Response> {
+  const session = getSession();
+  if (!session) return jsonResponse({ error: "Unauthorized" }, 401);
+
+  if (method === "GET") {
+    const internships = getEntity<Internship>(DEMO_STORAGE_KEYS.INTERNSHIPS);
+    const students = getEntity<Student>(DEMO_STORAGE_KEYS.STUDENTS);
+    // Return students who have internships at the same company
+    const coStudents: any[] = [];
+    internships.forEach((internship) => {
+      const student = students.find((s) => s.id === internship.studentId);
+      if (student) {
+        coStudents.push({
+          ...student,
+          companyId: internship.companyId,
+          internshipId: internship.id,
+        });
+      }
+    });
+    return jsonResponse(coStudents);
+  }
+
+  return jsonResponse({ error: "Not found" }, 404);
+}
+
+// Upload API
+async function handleUploadAPI(pathname: string, method: string, init?: RequestInit): Promise<Response> {
+  const session = getSession();
+  if (!session) return jsonResponse({ error: "Unauthorized" }, 401);
+
+  if (method === "POST") {
+    // Return mock URL for uploaded file
+    const mockUrl = `/uploads/demo/${generateId()}.${pathname.includes("resume") ? "pdf" : "jpg"}`;
+    return jsonResponse({ url: mockUrl, filename: `demo-file-${Date.now()}` });
+  }
+
+  return jsonResponse({ error: "Not found" }, 404);
+}
+
+// Email API
+async function handleEmailAPI(pathname: string, method: string, init?: RequestInit): Promise<Response> {
+  const session = getSession();
+  if (!session) return jsonResponse({ error: "Unauthorized" }, 401);
+
+  // Send email
+  if (pathname === "/api/email/send" && method === "POST") {
+    return jsonResponse({ success: true, message: "Email sent successfully (demo mode)" });
+  }
+
+  // Email settings
+  if (pathname === "/api/email/settings") {
+    if (method === "GET") {
+      const settings = getEntity<any>(DEMO_STORAGE_KEYS.EMAIL_SETTINGS);
+      return jsonResponse(settings[0] || null);
+    }
+    if (method === "POST") {
+      const body = await parseBody(init);
+      const newSetting: any = {
+        id: generateId(),
+        ...body,
+        createdAt: new Date().toISOString() as any,
+        updatedAt: new Date().toISOString() as any,
+      };
+      addEntity(DEMO_STORAGE_KEYS.EMAIL_SETTINGS, newSetting);
+      return jsonResponse(newSetting, 201);
+    }
+  }
+
+  // Email settings by ID
+  const settingsMatch = pathname.match(/^\/api\/email\/settings\/([^/]+)$/);
+  if (settingsMatch) {
+    const id = settingsMatch[1];
+    if (method === "GET") {
+      const setting = getEntityById<any>(DEMO_STORAGE_KEYS.EMAIL_SETTINGS, id);
+      if (!setting) return jsonResponse({ error: "Not found" }, 404);
+      return jsonResponse(setting);
+    }
+    if (method === "PATCH") {
+      const body = await parseBody(init);
+      const updated = updateEntity<any>(DEMO_STORAGE_KEYS.EMAIL_SETTINGS, id, {
+        ...body,
+        updatedAt: new Date().toISOString() as any,
+      });
+      if (!updated) return jsonResponse({ error: "Not found" }, 404);
+      return jsonResponse(updated);
+    }
+  }
+
+  // Email templates
+  if (pathname === "/api/email/templates") {
+    if (method === "GET") {
+      const templates = getEntity<any>(DEMO_STORAGE_KEYS.EMAIL_TEMPLATES);
+      return jsonResponse(templates);
+    }
+    if (method === "POST") {
+      const body = await parseBody(init);
+      const newTemplate: any = {
+        id: generateId(),
+        ...body,
+        createdAt: new Date().toISOString() as any,
+        updatedAt: new Date().toISOString() as any,
+      };
+      addEntity(DEMO_STORAGE_KEYS.EMAIL_TEMPLATES, newTemplate);
+      return jsonResponse(newTemplate, 201);
+    }
+  }
+
+  // Email template by ID
+  const templateMatch = pathname.match(/^\/api\/email\/templates\/([^/]+)$/);
+  if (templateMatch) {
+    const id = templateMatch[1];
+    if (method === "GET") {
+      const template = getEntityById<any>(DEMO_STORAGE_KEYS.EMAIL_TEMPLATES, id);
+      if (!template) return jsonResponse({ error: "Not found" }, 404);
+      return jsonResponse(template);
+    }
+    if (method === "PATCH") {
+      const body = await parseBody(init);
+      const updated = updateEntity<any>(DEMO_STORAGE_KEYS.EMAIL_TEMPLATES, id, {
+        ...body,
+        updatedAt: new Date().toISOString() as any,
+      });
+      if (!updated) return jsonResponse({ error: "Not found" }, 404);
+      return jsonResponse(updated);
+    }
+    if (method === "DELETE") {
+      const deleted = deleteEntity(DEMO_STORAGE_KEYS.EMAIL_TEMPLATES, id);
+      if (!deleted) return jsonResponse({ error: "Not found" }, 404);
+      return jsonResponse({ message: "Deleted successfully" });
+    }
+  }
+
+  return jsonResponse({ error: "Not found" }, 404);
+}
+
+// Backup API
+async function handleBackupAPI(pathname: string, method: string, init?: RequestInit): Promise<Response> {
+  const session = getSession();
+  if (!session || (session.role !== "admin" && session.role !== "super-admin")) {
+    return jsonResponse({ error: "Unauthorized" }, 401);
+  }
+
+  if (pathname === "/api/backups") {
+    if (method === "GET") {
+      const backups = getEntity<any>(DEMO_STORAGE_KEYS.BACKUPS);
+      return jsonResponse(backups);
+    }
+    if (method === "POST") {
+      const body = await parseBody(init);
+      const newBackup: any = {
+        id: generateId(),
+        ...body,
+        createdAt: new Date().toISOString() as any,
+        updatedAt: new Date().toISOString() as any,
+      };
+      addEntity(DEMO_STORAGE_KEYS.BACKUPS, newBackup);
+      return jsonResponse(newBackup, 201);
+    }
+  }
+
+  // Backup by ID
+  const match = pathname.match(/^\/api\/backups\/([^/]+)$/);
+  if (match) {
+    const id = match[1];
+    if (method === "GET") {
+      const backup = getEntityById<any>(DEMO_STORAGE_KEYS.BACKUPS, id);
+      if (!backup) return jsonResponse({ error: "Not found" }, 404);
+      return jsonResponse(backup);
+    }
+    if (method === "DELETE") {
+      const deleted = deleteEntity(DEMO_STORAGE_KEYS.BACKUPS, id);
+      if (!deleted) return jsonResponse({ error: "Not found" }, 404);
+      return jsonResponse({ message: "Deleted successfully" });
+    }
+  }
+
+  // Download backup
+  const downloadMatch = pathname.match(/^\/api\/backups\/([^/]+)\/download$/);
+  if (downloadMatch && method === "GET") {
+    const id = downloadMatch[1];
+    const backup = getEntityById<any>(DEMO_STORAGE_KEYS.BACKUPS, id);
+    if (!backup) return jsonResponse({ error: "Not found" }, 404);
+    // Return mock file data
+    return new Response(JSON.stringify({ data: "mock-backup-data" }), {
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Disposition": `attachment; filename="backup-${id}.json"`,
+      },
+    });
+  }
+
+  // Restore backup
+  const restoreMatch = pathname.match(/^\/api\/backups\/([^/]+)\/restore$/);
+  if (restoreMatch && method === "POST") {
+    return jsonResponse({ success: true, message: "Backup restored successfully (demo mode)" });
+  }
+
+  return jsonResponse({ error: "Not found" }, 404);
+}
+
+// Announcement Actions API
+async function handleAnnouncementActionsAPI(pathname: string, method: string, init?: RequestInit): Promise<Response> {
+  const session = getSession();
+  if (!session) return jsonResponse({ error: "Unauthorized" }, 401);
+
+  // Mark as read
+  const readMatch = pathname.match(/^\/api\/announcements\/([^/]+)\/read$/);
+  if (readMatch && method === "POST") {
+    return jsonResponse({ success: true, message: "Announcement marked as read" });
+  }
+
+  // Unread announcements
+  if (pathname === "/api/announcements/unread" && method === "GET") {
+    const announcements = getEntity<Announcement>(DEMO_STORAGE_KEYS.ANNOUNCEMENTS);
+    return jsonResponse(announcements.filter((a) => a.isActive));
+  }
+
+  return jsonResponse({ error: "Not found" }, 404);
+}
+
+// University Regenerate Invite API
+async function handleUniversityRegenerateInviteAPI(pathname: string, method: string, init?: RequestInit): Promise<Response> {
+  const session = getSession();
+  if (!session || (session.role !== "admin" && session.role !== "super-admin")) {
+    return jsonResponse({ error: "Unauthorized" }, 401);
+  }
+
+  const match = pathname.match(/^\/api\/universities\/([^/]+)\/regenerate-invite$/);
+  if (match && method === "POST") {
+    const id = match[1];
+    const university = getEntityById<University>(DEMO_STORAGE_KEYS.UNIVERSITIES, id);
+    if (!university) return jsonResponse({ error: "Not found" }, 404);
+    const newInviteCode = `DEMO${Date.now()}`;
+    const updated = updateEntity<University>(DEMO_STORAGE_KEYS.UNIVERSITIES, id, {
+      inviteCode: newInviteCode,
+      updatedAt: new Date().toISOString() as any,
+    });
+    return jsonResponse(updated);
+  }
+
+  return jsonResponse({ error: "Not found" }, 404);
+}
+
+// University Validate Invite API
+async function handleUniversityValidateInviteAPI(method: string, init?: RequestInit): Promise<Response> {
+  if (method === "POST") {
+    const body = await parseBody(init);
+    const universities = getEntity<University>(DEMO_STORAGE_KEYS.UNIVERSITIES);
+    const university = universities.find((u) => u.inviteCode === body.inviteCode);
+    if (university) {
+      return jsonResponse({ valid: true, university });
+    }
+    return jsonResponse({ valid: false }, 400);
+  }
+
+  return jsonResponse({ error: "Not found" }, 404);
+}
+
+// Notification Settings API
+async function handleNotificationSettingsAPI(method: string, init?: RequestInit): Promise<Response> {
+  const session = getSession();
+  if (!session) return jsonResponse({ error: "Unauthorized" }, 401);
+
+  if (method === "GET") {
+    // Return default settings
+    return jsonResponse({
+      email: true,
+      push: true,
+      sms: false,
+    });
+  }
+  if (method === "POST") {
+    const body = await parseBody(init);
+    return jsonResponse({ ...body, message: "Settings saved successfully" });
+  }
+
+  return jsonResponse({ error: "Not found" }, 404);
 }
 
 // Helper functions
